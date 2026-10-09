@@ -118,7 +118,9 @@ local status = label(panel, "Status", "Loading your collection...", UDim2.new(1,
 local currentTab = "Inventory"
 local function clearContent()
     for _, child in ipairs(content:GetChildren()) do
-        if child:IsA("Frame") then child:Destroy() end
+        if child ~= layout and not child:IsA("UIListLayout") then
+            child:Destroy()
+        end
     end
 end
 
@@ -211,25 +213,22 @@ function render()
     end
     for name, info in pairs(state.catalog) do
         local owned = state.owned[name] == true
-        if currentTab == "Shop" or (currentTab == "Inventory" and owned) then
+        if (currentTab == "Shop") or ((currentTab == "Inventory" or currentTab == "Loadout") and owned) then
             makeItemCard(name, info, owned)
         end
     end
-    if #content:GetChildren() <= 1 then
-        label(content, "Empty", currentTab == "Inventory" and "No items yet." or "The shop is empty.", UDim2.new(1, 0, 0, 40), UDim2.new(), Enum.Font.Gotham, MUTED, 12)
+    local itemCount = 0
+    for _, child in ipairs(content:GetChildren()) do
+        if child:IsA("Frame") then itemCount += 1 end
+    end
+    if itemCount == 0 then
+        label(content, "Empty", currentTab == "Shop" and "The shop is empty." or "No items yet.", UDim2.new(1, 0, 0, 40), UDim2.new(), Enum.Font.Gotham, MUTED, 12)
     end
 end
 
 makeTab("Inventory", 0, 1/3)
 makeTab("Shop", 1/3, 1/3)
 makeTab("Loadout", 2/3, 1/3)
-
-local loadoutTab = tabs:FindFirstChild("LoadoutTab")
-loadoutTab.Activated:Connect(function()
-    currentTab = "Inventory"
-    render()
-    showStatus("Equip an owned item to change your loadout.", true)
-end)
 
 open.Activated:Connect(function()
     panel.Visible = not panel.Visible
@@ -245,6 +244,20 @@ open.Activated:Connect(function()
     end
 end)
 close.Activated:Connect(function() panel.Visible = false end)
+
+-- Load the server state on startup so the hub is ready when opened.
+task.spawn(function()
+    local ok, result = pcall(function()
+        return getState:InvokeServer()
+    end)
+    if ok and type(result) == "table" then
+        state = result
+        render()
+        showStatus("Welcome! Your starter collection is ready.", true)
+    else
+        showStatus("Inventory is still loading. Open the hub again in a moment.", false)
+    end
+end)
 
 player:GetAttributeChangedSignal("Coins"):Connect(function()
     if state then
