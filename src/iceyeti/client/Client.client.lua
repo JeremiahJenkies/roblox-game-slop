@@ -44,16 +44,16 @@ top.Name = "TopBar"
 top.AnchorPoint = Vector2.new(0.5, 0)
 top.Position = UDim2.new(0.5, 0, 0, 18)
 top.Size = UDim2.new(0.9, 0, 0, 88)
-top.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
+top.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
 top.BackgroundTransparency = 0.08
 top.Parent = gui
 rounded(top, 16)
 local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(255, 116, 65)
+stroke.Color = Color3.fromRGB(225, 143, 58)
 stroke.Transparency = 0.25
 stroke.Parent = top
 
-makeLabel(top, "GameTitle", "SURVIVE ICE YETIS", UDim2.new(1, -24, 0, 26), UDim2.fromOffset(16, 10), Enum.Font.GothamBlack, Color3.fromRGB(255, 145, 83), 18)
+makeLabel(top, "GameTitle", "SURVIVE ICE YETIS", UDim2.new(1, -24, 0, 26), UDim2.fromOffset(16, 10), Enum.Font.GothamBlack, Color3.fromRGB(238, 169, 82), 18)
 local dayLabel = makeLabel(top, "Day", "DAY 0 / 100", UDim2.new(0.48, 0, 0, 25), UDim2.fromOffset(16, 45), Enum.Font.GothamBold, Color3.fromRGB(245, 245, 250), 15)
 local phaseLabel = makeLabel(top, "Phase", "PREPARING", UDim2.new(0.5, -16, 0, 25), UDim2.new(0.5, 0, 0, 45), Enum.Font.GothamBold, Color3.fromRGB(130, 218, 255), 14)
 phaseLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -64,7 +64,7 @@ flareButton.Name = "ThrowFlare"
 flareButton.AnchorPoint = Vector2.new(1, 0)
 flareButton.Position = UDim2.new(1, -18, 0, 120)
 flareButton.Size = UDim2.fromOffset(170, 48)
-flareButton.BackgroundColor3 = Color3.fromRGB(174, 66, 42)
+flareButton.BackgroundColor3 = Color3.fromRGB(132, 65, 35)
 flareButton.Text = "✦  THROW FLARE"
 flareButton.TextColor3 = Color3.fromRGB(255, 242, 225)
 flareButton.Font = Enum.Font.GothamBlack
@@ -72,7 +72,7 @@ flareButton.TextSize = 13
 flareButton.Parent = gui
 rounded(flareButton, 12)
 local flareStroke = Instance.new("UIStroke")
-flareStroke.Color = Color3.fromRGB(255, 157, 87)
+flareStroke.Color = Color3.fromRGB(228, 157, 78)
 flareStroke.Transparency = 0.2
 flareStroke.Parent = flareButton
 
@@ -115,7 +115,7 @@ local stats = Instance.new("Frame")
 stats.Name = "PlayerStats"
 stats.Position = UDim2.new(0, 18, 0, 120)
 stats.Size = UDim2.fromOffset(210, 132)
-stats.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
+stats.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
 stats.BackgroundTransparency = 0.1
 stats.Parent = gui
 rounded(stats, 13)
@@ -130,13 +130,13 @@ timerBack.Name = "TimerBack"
 timerBack.AnchorPoint = Vector2.new(0.5, 1)
 timerBack.Position = UDim2.new(0.5, 0, 1, -24)
 timerBack.Size = UDim2.new(0.58, 0, 0, 12)
-timerBack.BackgroundColor3 = Color3.fromRGB(25, 29, 42)
+timerBack.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
 timerBack.Parent = gui
 rounded(timerBack, 6)
 local timerFill = Instance.new("Frame")
 timerFill.Name = "Fill"
 timerFill.Size = UDim2.fromScale(1, 1)
-timerFill.BackgroundColor3 = Color3.fromRGB(255, 117, 65)
+timerFill.BackgroundColor3 = Color3.fromRGB(226, 144, 57)
 timerFill.Parent = timerBack
 rounded(timerFill, 6)
 local timerText = makeLabel(gui, "Timer", "GET READY", UDim2.new(0.8, 0, 0, 22), UDim2.new(0.1, 0, 1, -53), Enum.Font.GothamBold, Color3.fromRGB(245, 242, 238), 12)
@@ -147,7 +147,7 @@ notice.Name = "Notice"
 notice.AnchorPoint = Vector2.new(0.5, 0)
 notice.Position = UDim2.new(0.5, 0, 0, 120)
 notice.Size = UDim2.new(0.86, 0, 0, 54)
-notice.BackgroundColor3 = Color3.fromRGB(47, 24, 33)
+notice.BackgroundColor3 = Color3.fromRGB(35, 43, 28)
 notice.BackgroundTransparency = 1
 notice.TextTransparency = 1
 notice.Text = ""
@@ -199,12 +199,12 @@ noticeEvent.OnClientEvent:Connect(showNotice)
 -- Client-side finishing pass: restrained post-processing keeps the scene moody without heavy blur.
 local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere") or Instance.new("Atmosphere")
 atmosphere.Name = "IceYetiAtmosphere"
-atmosphere.Density = 0.28
-atmosphere.Offset = 0.08
-atmosphere.Color = Color3.fromRGB(164, 190, 224)
-atmosphere.Decay = Color3.fromRGB(48, 58, 91)
-atmosphere.Glare = 0.04
-atmosphere.Haze = 1.2
+atmosphere.Density = 0.3
+atmosphere.Offset = 0.05
+atmosphere.Color = Color3.fromRGB(145, 174, 129)
+atmosphere.Decay = Color3.fromRGB(43, 58, 40)
+atmosphere.Glare = 0.03
+atmosphere.Haze = 1.5
 atmosphere.Parent = Lighting
 
 local bloom = Lighting:FindFirstChild("IceYetiBloom") or Instance.new("BloomEffect")
@@ -219,5 +219,5 @@ colorGrade.Name = "IceYetiColorGrade"
 colorGrade.Brightness = -0.025
 colorGrade.Contrast = 0.12
 colorGrade.Saturation = -0.08
-colorGrade.TintColor = Color3.fromRGB(207, 220, 255)
+colorGrade.TintColor = Color3.fromRGB(214, 220, 177)
 colorGrade.Parent = Lighting
