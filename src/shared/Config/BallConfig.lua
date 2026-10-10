@@ -1,12 +1,19 @@
 --!strict
--- Ball tuning for Milestone 2. Values are centralized before the ball service is introduced.
+-- Physical tuning for the server-owned match ball. Units are Roblox studs and seconds.
 return {
     Radius = 1.2,
     Density = 0.7,
     Friction = 0.45,
     Elasticity = 0.35,
     MaxSpeed = 115,
+    MaxAngularSpeed = 42,
     RestSpeed = 0.75,
+    SleepSeconds = 0.65,
+    AirDrag = 0.0007,
+    GroundRollingResistance = 5.5,
+    SlidingFriction = 8,
+    SpinDecay = 1.8,
+    MinBounceSpeed = 3,
     KickCooldown = 0.45,
     KickRange = 13,
     PassPower = 34,
