@@ -24,6 +24,7 @@ local kickRemote: RemoteEvent? = nil
 local actionRemote: RemoteEvent? = nil
 local noticeRemote: RemoteEvent? = nil
 local lastTackleAt: {[Player]: number} = {}
+local lastSkillAt: {[Player]: number} = {}
 local radius = BallConfig.Radius
 local physicsAccumulator = 0
 local slowGroundSince: number? = nil
@@ -261,6 +262,62 @@ recordTouch = function(player: Player)
     currentBall:SetAttribute("LastTouchedTeam", player:GetAttribute("Team") or (player.Team and player.Team.Name) or "")
 end
 
+local function attemptSkillMove(player: Player, moveName: any)
+    local currentBall = ball
+    if not currentBall or not currentBall.Parent then return end
+    if moveName ~= "Feint" and moveName ~= "StepOver" then return end
+    local state = MatchService.GetState()
+    if state.phase ~= "PLAYING" and state.phase ~= "PRACTICE" then return end
+    local now = os.clock()
+    if now - (lastSkillAt[player] or 0) < 0.8 then
+        notifyPlayer(player, "Skill move is cooling down.")
+        return
+    end
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not root or not root:IsA("BasePart") or not humanoid or humanoid.Health <= 0 then return end
+    if (root.Position - currentBall.Position).Magnitude > BallConfig.TouchRange + 1 then
+        notifyPlayer(player, "Get closer to the ball to use a skill move.")
+        return
+    end
+    local possessorId = currentBall:GetAttribute("PossessorUserId")
+    if typeof(possessorId) == "number" and possessorId > 0 and possessorId ~= player.UserId then
+        notifyPlayer(player, "Win possession before using a skill move.")
+        return
+    end
+    lastSkillAt[player] = now
+    if possessorId ~= player.UserId then
+        local incoming = currentBall.AssemblyLinearVelocity
+        recordTouch(player)
+        attachPossession(player, root)
+        currentBall.AssemblyLinearVelocity = Vector3.new(incoming.X * 0.58, math.max(0, incoming.Y * 0.35), incoming.Z * 0.58)
+        currentBall.AssemblyAngularVelocity *= 0.72
+    end
+    local side = 1
+    local moveDirection = Vector3.new(humanoid.MoveDirection.X, 0, humanoid.MoveDirection.Z)
+    local right = Vector3.new(root.CFrame.RightVector.X, 0, root.CFrame.RightVector.Z)
+    if moveName == "Feint" then
+        if moveDirection.Magnitude > 0.1 and right.Magnitude > 0.1 then
+            side = moveDirection.Unit:Dot(right.Unit) >= 0 and 1 or -1
+        else
+            side = player.UserId % 2 == 0 and 1 or -1
+        end
+    end
+    local moveDuration = moveName == "StepOver" and 0.62 or 0.42
+    root:SetAttribute("PITCHSkillMove", moveName)
+    root:SetAttribute("PITCHSkillSide", side)
+    root:SetAttribute("PITCHSkillMoveUntil", now + moveDuration)
+    notifyPlayer(player, moveName == "StepOver" and "Step-over!" or "Feint!")
+    task.delay(0.7, function()
+        if root.Parent and root:GetAttribute("PITCHSkillMoveUntil") == now + moveDuration then
+            root:SetAttribute("PITCHSkillMove", nil)
+            root:SetAttribute("PITCHSkillSide", nil)
+            root:SetAttribute("PITCHSkillMoveUntil", nil)
+        end
+    end)
+end
+
 local function doKick(player: Player, action: any, direction: any, powerValue: any)
     local currentBall = ball
     if not currentBall or not currentBall.Parent then notifyPlayer(player, "The ball is respawning."); return end
@@ -441,14 +498,19 @@ function BallService.Init()
     createBall()
     kickRemote.OnServerEvent:Connect(doKick)
     if actionRemote then
-        actionRemote.OnServerEvent:Connect(function(player: Player, action: any)
-            if action == "Tackle" then attemptTackle(player) end
+        actionRemote.OnServerEvent:Connect(function(player: Player, action: any, detail: any)
+            if action == "Tackle" then
+                attemptTackle(player)
+            elseif action == "SkillMove" then
+                attemptSkillMove(player, detail)
+            end
         end)
     end
     maid:GiveTask(Players.PlayerRemoving:Connect(function(player)
         lastKickAt[player] = nil
         lastDribbleAt[player] = nil
         lastTackleAt[player] = nil
+        lastSkillAt[player] = nil
     end))
     maid:GiveTask(RunService.Heartbeat:Connect(function(deltaTime: number)
         local currentBall = ball
@@ -562,8 +624,12 @@ function BallService.Init()
                     end
                 end
                 if chosenPlayer and chosenRoot then
+                    -- First-touch control cushions a moving ball while retaining some of its momentum.
+                    local incoming = currentBall.AssemblyLinearVelocity
                     recordTouch(chosenPlayer)
                     attachPossession(chosenPlayer, chosenRoot)
+                    currentBall.AssemblyLinearVelocity = Vector3.new(incoming.X * 0.58, math.max(0, incoming.Y * 0.35), incoming.Z * 0.58)
+                    currentBall.AssemblyAngularVelocity *= 0.72
                 end
             end
 
@@ -574,9 +640,25 @@ function BallService.Init()
                     direction = Vector3.new(look.X, 0, look.Z)
                 end
                 local target = chosenRoot:FindFirstChild("PITCHBallTargetAttachment")
-                if target and target:IsA("Attachment") and direction.Magnitude > 0.1 then
-                    target.Position = Vector3.new(0, -1.25, -BallConfig.DribbleTargetOffset)
-                    target.CFrame = CFrame.new(target.Position)
+                if target and target:IsA("Attachment") then
+                    local targetSide = 0
+                    local skillName = chosenRoot:GetAttribute("PITCHSkillMove")
+                    local skillSide = tonumber(chosenRoot:GetAttribute("PITCHSkillSide")) or 1
+                    local skillUntil = tonumber(chosenRoot:GetAttribute("PITCHSkillMoveUntil")) or 0
+                    local now = os.clock()
+                    if now < skillUntil then
+                        if skillName == "Feint" then
+                            targetSide = skillSide * 1.25
+                        elseif skillName == "StepOver" then
+                            local elapsed = 0.62 - (skillUntil - now)
+                            targetSide = (elapsed < 0.22 and skillSide or (elapsed < 0.43 and -skillSide or 0)) * 0.85
+                        end
+                    end
+                    local forwardOffset = BallConfig.DribbleTargetOffset
+                    if direction.Magnitude > 0.1 and chosenHumanoid.WalkSpeed > 18 then
+                        forwardOffset += 0.25
+                    end
+                    target.Position = Vector3.new(targetSide, -1.25, -forwardOffset)
                     lastDribbleAt[chosenPlayer] = os.clock()
                     lastMovedAt = os.clock()
                 end
