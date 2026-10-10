@@ -5,6 +5,7 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 ## Features in this build
 - Configurable 150 x 240 stud football pitch with mowing stripes, field markings, penalty/goal boxes, goals and nets, stepped grandstands, supports, floodlights, and atmosphere/color grading.
 - Server-owned football with black panel detailing, validated Pass/Shoot/Lob/Clearance actions, range/cooldown checks, speed cap, fixed 60 Hz custom-force stepping, air drag, rolling resistance, spin decay, grounded sleep, spherecast anti-tunnelling assistance, stuck/out-of-bounds recovery, moving-player dribble nudges and mathematical goal-plane detection.
+- Advanced ball control: server-validated feints and step-over moves on Z/X (or mobile buttons), short skill-move cooldowns, side-offset close control, and first-touch cushioning that reduces incoming ball speed while preserving momentum.
 - Match lifecycle: intermission, kick-off, two halves, half-time, full-time, score updates, team-side switching and automatic rematches; configurable throw-in, corner and goal-kick restarts.
 - Server-authoritative sprint and stamina drain/regeneration; clients send intent rather than setting their own movement speed.
 - Signature 1.35x bobble heads with movement-reactive wobble on every player.
