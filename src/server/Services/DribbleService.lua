@@ -100,13 +100,15 @@ local function evaluate(player: Player, ball: BasePart, now: number)
     if ball.Position.Y - ball.Size.X / 2 - feetY > Config.MaxTouchHeight then return nil end
     return {player = player, root = root, humanoid = humanoid, foot = foot, distance = distance, toBall = toBall}
 end
+type Candidate = { player: Player, root: BasePart, humanoid: Humanoid, foot: Vector3, distance: number, toBall: Vector3 }
+
 local function step()
     local h = hooks
     local ball = h and h.GetBall()
     if not enabled or not h or not ball or not ball.Parent or ball.Anchored then return end
     pcall(function() ball:SetNetworkOwner(nil) end)
     local now = os.clock()
-    local candidates = {}
+    local candidates: {Candidate} = {}
     for _, player in ipairs(Players:GetPlayers()) do
         local candidate = evaluate(player, ball, now)
         if candidate then table.insert(candidates, candidate) end
