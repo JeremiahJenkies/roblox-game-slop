@@ -528,19 +528,113 @@ local function buildWorld()
 		end
 	end
 
+	-- Landmark pass: a ruined cabin, a lookout tower, and a frosted cave make the forest easier to navigate.
+	-- Keep each structure as a small number of anchored parts to avoid unnecessary physics cost.
+	local cabin = Instance.new("Model")
+	cabin.Name = "AbandonedCabin"
+	cabin.Parent = mapFolder
+	makePart(cabin, "CabinFloor", Vector3.new(18, 1, 14), CFrame.new(-83, 0.5, -76), Color3.fromRGB(66, 52, 46), Enum.Material.WoodPlanks)
+	makePart(cabin, "CabinBack", Vector3.new(18, 9, 1), CFrame.new(-83, 5, -83), Color3.fromRGB(58, 48, 45), Enum.Material.WoodPlanks)
+	makePart(cabin, "CabinLeft", Vector3.new(1, 9, 14), CFrame.new(-92, 5, -76), Color3.fromRGB(72, 56, 47), Enum.Material.WoodPlanks)
+	makePart(cabin, "CabinRight", Vector3.new(1, 9, 14), CFrame.new(-74, 5, -76), Color3.fromRGB(72, 56, 47), Enum.Material.WoodPlanks)
+	makePart(cabin, "CabinRoof", Vector3.new(20, 1.5, 16), CFrame.new(-83, 10, -76), Color3.fromRGB(41, 52, 62), Enum.Material.Slate)
+	local cabinMarker = makePart(cabin, "CabinLantern", Vector3.new(1, 1, 1), CFrame.new(-83, 7, -68), Color3.fromRGB(255, 171, 76), Enum.Material.Neon)
+	cabinMarker.Shape = Enum.PartType.Ball
+	cabinMarker.CanCollide = false
+	local cabinLight = Instance.new("PointLight")
+	cabinLight.Color = cabinMarker.Color
+	cabinLight.Brightness = 1.1
+	cabinLight.Range = 18
+	cabinLight.Parent = cabinMarker
+
+	local tower = Instance.new("Model")
+	tower.Name = "FrostwatchTower"
+	tower.Parent = mapFolder
+	makePart(tower, "TowerBase", Vector3.new(12, 1, 12), CFrame.new(88, 0.5, -48), Color3.fromRGB(63, 57, 52), Enum.Material.WoodPlanks)
+	for _, offset in ipairs({Vector3.new(-5, 8, -5), Vector3.new(5, 8, -5), Vector3.new(-5, 8, 5), Vector3.new(5, 8, 5)}) do
+		makePart(tower, "SupportBeam", Vector3.new(1, 16, 1), CFrame.new(88 + offset.X, offset.Y, -48 + offset.Z), Color3.fromRGB(72, 58, 46), Enum.Material.Wood)
+	end
+	makePart(tower, "TowerPlatform", Vector3.new(14, 1, 14), CFrame.new(88, 16, -48), Color3.fromRGB(80, 65, 52), Enum.Material.WoodPlanks)
+	makePart(tower, "TowerRoof", Vector3.new(16, 1, 16), CFrame.new(88, 22, -48), Color3.fromRGB(45, 53, 65), Enum.Material.Slate)
+	local towerBeacon = makePart(tower, "TowerBeacon", Vector3.new(1.3, 1.3, 1.3), CFrame.new(88, 20, -48), Color3.fromRGB(111, 215, 255), Enum.Material.Neon)
+	towerBeacon.Shape = Enum.PartType.Ball
+	towerBeacon.CanCollide = false
+	local beaconLight = Instance.new("PointLight")
+	beaconLight.Color = towerBeacon.Color
+	beaconLight.Brightness = 1.4
+	beaconLight.Range = 24
+	beaconLight.Parent = towerBeacon
+
+	local cave = Instance.new("Model")
+	cave.Name = "FrostCave"
+	cave.Parent = mapFolder
+	for i, data in ipairs({
+		{Vector3.new(5, 12, 8), Vector3.new(112, 6, 20)},
+		{Vector3.new(5, 10, 8), Vector3.new(124, 5, 20)},
+		{Vector3.new(8, 5, 8), Vector3.new(118, 11, 20)},
+		{Vector3.new(4, 8, 5), Vector3.new(118, 4, 26)},
+	}) do
+		local rock = makePart(cave, "CaveIceRock" .. i, data[1], CFrame.new(data[2]), Color3.fromRGB(92, 145, 170), Enum.Material.Ice)
+		rock.Shape = Enum.PartType.Ball
+	end
+	local caveGlow = makePart(cave, "CaveGlow", Vector3.new(1.5, 1.5, 1.5), CFrame.new(118, 2, 16), Color3.fromRGB(126, 220, 255), Enum.Material.Neon)
+	caveGlow.Shape = Enum.PartType.Ball
+	caveGlow.CanCollide = false
+	local caveLight = Instance.new("PointLight")
+	caveLight.Color = caveGlow.Color
+	caveLight.Brightness = 1
+	caveLight.Range = 16
+	caveLight.Parent = caveGlow
+
+	-- One-time exploration discoveries are saved inside the existing player profile.
+	local discoveries = {
+		{model = cabin, id = "Cabin", part = cabinMarker, title = "Abandoned Cabin", coins = 25, wood = 3, stone = 0},
+		{model = tower, id = "Tower", part = towerBeacon, title = "Frostwatch Tower", coins = 35, wood = 0, stone = 3},
+		{model = cave, id = "Cave", part = caveGlow, title = "Frost Cave", coins = 40, wood = 1, stone = 2},
+	}
+	for _, discovery in ipairs(discoveries) do
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "Discover" .. discovery.id
+		prompt.ActionText = "Record Discovery"
+		prompt.ObjectText = discovery.title
+		prompt.HoldDuration = 0.6
+		prompt.MaxActivationDistance = 12
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = discovery.part
+		prompt.Triggered:Connect(function(player)
+			local data = profiles[player]
+			if not data then return end
+			data.discoveries = data.discoveries or {}
+			if data.discoveries[discovery.id] then
+				noticeEvent:FireClient(player, "Already recorded: " .. discovery.title)
+				return
+			end
+			data.discoveries[discovery.id] = true
+			data.coins += discovery.coins
+			data.wood += discovery.wood
+			data.stone += discovery.stone
+			player:SetAttribute("Coins", data.coins)
+			player:SetAttribute("Wood", data.wood)
+			player:SetAttribute("Stone", data.stone)
+			player:SetAttribute("Discoveries", (data.discoveries.Cabin and 1 or 0) + (data.discoveries.Tower and 1 or 0) + (data.discoveries.Cave and 1 or 0))
+			noticeEvent:FireClient(player, "Discovery logged: " .. discovery.title .. "  •  +" .. discovery.coins .. " coins")
+			task.spawn(saveProfile, player)
+		end)
+	end
+
 	yetisFolder = Instance.new("Folder")
 	yetisFolder.Name = "Yetis"
 	yetisFolder.Parent = mapFolder
 end
 
 local function defaultProfile()
-	return {coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0}
+	return {coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0, discoveries = {}}
 end
 
 saveProfile = function(player)
 	local data = profiles[player]
 	if not data or not store then return end
-	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone}
+	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone, discoveries = data.discoveries or {}}
 	local ok, err = pcall(function()
 		store:UpdateAsync("player_" .. player.UserId, function()
 			return payload
@@ -563,6 +657,13 @@ local function loadProfile(player)
 		data.wins = math.max(0, tonumber(saved.wins) or 0)
 		data.wood = math.max(0, tonumber(saved.wood) or 0)
 		data.stone = math.max(0, tonumber(saved.stone) or 0)
+		if type(saved.discoveries) == "table" then
+			data.discoveries = {
+				Cabin = saved.discoveries.Cabin == true,
+				Tower = saved.discoveries.Tower == true,
+				Cave = saved.discoveries.Cave == true,
+			}
+		end
 	elseif store and not ok then
 		warn("[IceYeti] Data load failed for " .. player.Name .. ": " .. tostring(saved))
 	end
@@ -572,6 +673,7 @@ local function loadProfile(player)
 	player:SetAttribute("Wins", data.wins)
 	player:SetAttribute("Wood", data.wood)
 	player:SetAttribute("Stone", data.stone)
+	player:SetAttribute("Discoveries", (data.discoveries.Cabin and 1 or 0) + (data.discoveries.Tower and 1 or 0) + (data.discoveries.Cave and 1 or 0))
 end
 
 local function livingPlayers()
