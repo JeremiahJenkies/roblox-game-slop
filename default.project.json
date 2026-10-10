@@ -1,26 +1,20 @@
 {
-  "name": "Survive Ice Yetis For 100 Days",
+  "name": "PITCH Competitive Soccer",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
-      "Shared": {
-        "$path": "src/iceyeti/shared"
-      }
+      "Shared": { "$path": "src/soccer/shared" }
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "IceYetiServer": {
-        "$path": "src/iceyeti/server"
-      }
+      "SoccerServer": { "$path": "src/soccer/server" }
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "IceYetiClient": {
-          "$path": "src/iceyeti/client/Client.client.lua"
-        }
+        "SoccerClient": { "$path": "src/soccer/client/Client.client.lua" }
       }
     }
   }
