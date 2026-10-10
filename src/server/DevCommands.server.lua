@@ -11,6 +11,7 @@ local PitchService = require(servicesFolder:WaitForChild("PitchService"))
 local BallService = require(servicesFolder:WaitForChild("BallService"))
 local BallConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("BallConfig"))
 local PitchConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("PitchConfig"))
+local DribbleService = require(servicesFolder:WaitForChild("DribbleService"))
 
 local function attach(player: Player)
     if playerMaids[player] then playerMaids[player]:Destroy() end
@@ -46,6 +47,23 @@ local function attach(player: Player)
                 ball.AssemblyLinearVelocity = Vector3.new(30, 0, 0)
                 print("[DevCommands] Out-of-bounds test triggered.")
             end
+        elseif command == "/dribbledebug" then
+            DribbleService.SetDebug(true)
+            print("[DevCommands] Dribble debug markers enabled.")
+        elseif command == "/dribbledebugoff" then
+            DribbleService.SetDebug(false)
+            print("[DevCommands] Dribble debug markers disabled.")
+        elseif command == "/dribletouch" then
+            DribbleService.DebugTouch(player)
+            print("[DevCommands] Forced a Studio-only test touch.")
+        elseif string.sub(command, 1, 13) == "/dribbleskill " then
+            local skill = tonumber(string.sub(command, 14))
+            if skill then
+                player:SetAttribute("DribbleSkill", math.clamp(skill, 0, 1))
+                print("[DevCommands] DribbleSkill set to " .. tostring(player:GetAttribute("DribbleSkill")))
+            else
+                warn("[DevCommands] Usage: /dribbleskill 0.0 to 1.0")
+            end
         elseif command == "/ballinfo" then
             local ball = BallService.GetBall()
             if ball then
@@ -63,4 +81,4 @@ Players.PlayerRemoving:Connect(function(player)
     if maid then maid:Destroy(); playerMaids[player] = nil end
 end)
 for _, player in ipairs(Players:GetPlayers()) do attach(player) end
-print("[DevCommands] Studio-only /stats and /pitch commands enabled.")
+print("[DevCommands] Studio-only /stats, /pitch and dribbling debug commands enabled.")
