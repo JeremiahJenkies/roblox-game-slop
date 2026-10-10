@@ -76,11 +76,15 @@ local function buildGoal(parent: Instance, teamName: string, sign: number, halfL
     local backZ = z + sign * PitchConfig.GoalDepth
     for _, x in ipairs({-halfGoal, halfGoal}) do
         local sideNet = makePart(goal, "GoalNetSide", Vector3.new(0.18, PitchConfig.GoalHeight, PitchConfig.GoalDepth), CFrame.new(x, pitchTop + PitchConfig.GoalHeight / 2, z + sign * PitchConfig.GoalDepth / 2), Color3.fromRGB(202, 215, 219), Enum.Material.Fabric, PitchConfig.GoalNetTransparency)
-        sideNet.CanCollide = false
+        sideNet.CanCollide = true
+        sideNet.CanTouch = false
+        sideNet.CanQuery = true
     end
     local rearNet = makePart(goal, "GoalNetBack", Vector3.new(PitchConfig.GoalWidth, PitchConfig.GoalHeight, 0.18), CFrame.new(0, pitchTop + PitchConfig.GoalHeight / 2, backZ), Color3.fromRGB(202, 215, 219), Enum.Material.Fabric, PitchConfig.GoalNetTransparency)
-    rearNet.CanCollide = false
-    -- Goal marker is deliberately not wired to Touched; Milestone 2 will implement math-based goal-plane detection.
+    rearNet.CanCollide = true
+    rearNet.CanTouch = false
+    rearNet.CanQuery = true
+    -- The nets are collidable so shots stop inside the goal; scoring uses swept goal-plane detection in BallService.
     local trigger = makePart(goal, "GoalPlaneMarker", Vector3.new(PitchConfig.GoalWidth - 0.5, PitchConfig.GoalHeight - 0.5, 0.25), CFrame.new(0, pitchTop + PitchConfig.GoalHeight / 2, z + sign * 0.25), Color3.new(1, 1, 1), Enum.Material.SmoothPlastic, 1)
     trigger.CanCollide = false
     trigger.CanTouch = false
