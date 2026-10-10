@@ -22,5 +22,10 @@ return {
     ClearancePower = 94,
     KickLift = 13,
     TouchRange = 5,
+    DribbleControlRange = 5.2,
+    DribbleAcquireRange = 4.8,
+    DribbleTargetOffset = 2.2,
+    DribbleCorrectionSpeed = 7,
+    DribbleReleaseRange = 6.2,
     StuckBallSeconds = 8,
 }
