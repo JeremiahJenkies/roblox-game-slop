@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local BallConfig = require(Shared:WaitForChild("Config"):WaitForChild("BallConfig"))
+local MatchConfig = require(Shared:WaitForChild("Config"):WaitForChild("MatchConfig"))
 local PitchConfig = require(Shared:WaitForChild("Config"):WaitForChild("PitchConfig"))
 local MatchService = require(script.Parent:WaitForChild("MatchService"))
 local Maid = require(Shared:WaitForChild("Util"):WaitForChild("Maid"))
@@ -104,6 +105,22 @@ end
 
 function BallService.GetBall(): Part?
     return ball
+end
+
+function BallService.PlaceForRestart(position: Vector3)
+    local currentBall = ball
+    if not currentBall or not currentBall.Parent then return end
+    currentBall.AssemblyLinearVelocity = Vector3.zero
+    currentBall.AssemblyAngularVelocity = Vector3.zero
+    currentBall.CFrame = CFrame.new(position)
+    scoredThisTrip = false
+    currentBall:SetAttribute("LastTouchedByUserId", 0)
+    currentBall:SetAttribute("PreviousTouchedByUserId", 0)
+    currentBall:SetAttribute("LastTouchedTeam", "")
+    currentBall:SetAttribute("PreviousTouchedTeam", "")
+    previousPosition = currentBall.Position
+    lastMovedAt = os.clock()
+    pcall(function() currentBall:SetNetworkOwner(nil) end)
 end
 
 local function createBall()
@@ -270,11 +287,45 @@ local function resetIfInvalidOrOutOfBounds(position: Vector3): boolean
     local beyondSide = math.abs(position.X) > halfWidth + radius
     local beyondEnd = math.abs(position.Z) > halfLength + PitchConfig.GoalDepth + radius + 2
     local belowMap = position.Y < -8
-    if beyondSide or beyondEnd or belowMap then
+    if not beyondSide and not beyondEnd and not belowMap then return false end
+
+    local state = MatchService.GetState()
+    if state.phase ~= "PLAYING" or belowMap then
         BallService.ResetBall()
         return true
     end
-    return false
+
+    local currentBall = ball
+    local lastTeam = currentBall and currentBall:GetAttribute("LastTouchedTeam") or ""
+    if lastTeam ~= "Red" and lastTeam ~= "Blue" then lastTeam = "Red" end
+    local awardedTeam = lastTeam == "Red" and "Blue" or "Red"
+    local pitchTop = getPitchTop()
+    local restartType: string
+    local spot: Vector3
+
+    if beyondSide then
+        restartType = "THROW_IN"
+        spot = Vector3.new(math.sign(position.X) * (halfWidth - radius - 0.15), pitchTop + radius + 0.03,
+            math.clamp(position.Z, -halfLength + 2, halfLength - 2))
+    else
+        local northEnd = position.Z < 0
+        local defendingTeam = northEnd and "Red" or "Blue"
+        local attackingTeam = northEnd and "Blue" or "Red"
+        if lastTeam == defendingTeam then
+            restartType = "CORNER"
+            awardedTeam = attackingTeam
+            spot = Vector3.new(math.sign(position.X == 0 and 1 or position.X) * (halfWidth - radius - 0.2),
+                pitchTop + radius + 0.03, northEnd and (-halfLength + 1.5) or (halfLength - 1.5))
+        else
+            restartType = "GOAL_KICK"
+            awardedTeam = defendingTeam
+            spot = Vector3.new(0, pitchTop + radius + 0.03, northEnd and (-halfLength + PitchConfig.GoalAreaDepth / 2) or (halfLength - PitchConfig.GoalAreaDepth / 2))
+        end
+    end
+
+    BallService.PlaceForRestart(spot)
+    MatchService.BeginRestart(restartType, awardedTeam, spot)
+    return true
 end
 
 function BallService.Init()
