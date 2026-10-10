@@ -204,9 +204,9 @@ local function attachPossession(player: Player, root: BasePart)
     align.Attachment1 = target
     align.ApplyAtCenterOfMass = true
     align.RigidityEnabled = false
-    align.Responsiveness = 35
-    align.MaxForce = 50000
-    align.MaxVelocity = 55
+    align.Responsiveness = 18
+    align.MaxForce = 18000
+    align.MaxVelocity = 32
     align.Parent = currentBall
     currentBall.AssemblyAngularVelocity = Vector3.zero
     currentBall:SetAttribute("PossessorUserId", player.UserId)
@@ -379,7 +379,7 @@ local function resolveFastTravel(previous: Vector3, current: Vector3)
         currentBall.Position = result.Position + result.Normal * (radius * 0.68)
         local normalSpeed = incoming:Dot(result.Normal)
         if normalSpeed < 0 then
-            currentBall.AssemblyLinearVelocity = incoming - result.Normal * (1.65 * normalSpeed)
+            currentBall.AssemblyLinearVelocity = incoming - result.Normal * (1.24 * normalSpeed)
         end
     end
 end
@@ -455,7 +455,7 @@ function BallService.Init()
         local currentStadium = stadium
         if not currentBall or not currentBall.Parent or not currentStadium or not currentStadium.Parent then return end
 
-        -- Fixed 60 Hz custom-force step so drag and spin decay are independent of server frame rate.
+        -- Fixed 60 Hz rolling resistance and spin damping; the ball remains a normal unanchored physics part.
         physicsAccumulator = math.min(physicsAccumulator + math.min(deltaTime, 0.1), 0.2)
         local fixedStep = 1 / 60
         while physicsAccumulator >= fixedStep do
@@ -513,8 +513,8 @@ function BallService.Init()
         if os.clock() - lastMovedAt >= BallConfig.StuckBallSeconds then BallService.ResetBall() end
         previousPosition = currentBall.Position
     end))
-    -- Close-control possession: the ball physically follows the nearest player who reaches it.
-    -- It remains unanchored; an AlignPosition constraint lets tackles, kicks and ball physics stay responsive.
+    -- Close-control possession only starts at close range. A soft constraint gives foot control without snapping the ball from several studs away.
+    -- The ball remains unanchored and is released into normal physics on each kick.
     task.spawn(function()
         while ball and ball.Parent do
             task.wait(0.05)
