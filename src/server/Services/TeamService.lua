@@ -2,7 +2,10 @@
 local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PlayerConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("PlayerConfig"))
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local PlayerConfig = require(Shared:WaitForChild("Config"):WaitForChild("PlayerConfig"))
+local ProductsConfig = require(Shared:WaitForChild("Config"):WaitForChild("ProductsConfig"))
+local DataService = require(script.Parent:WaitForChild("DataService"))
 local Maid = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Util"):WaitForChild("Maid"))
 local TeamService = {}
 local playerMaids: {[Player]: any} = {}
@@ -59,6 +62,10 @@ local function applyFootballAppearance(player: Player, character: Model)
     if bodyColors then
         local teamColor = teamName == "Red" and Color3.fromRGB(190, 44, 48) or Color3.fromRGB(42, 92, 173)
         local shortsColor = Color3.fromRGB(35, 43, 53)
+        local profile = DataService.GetProfile(player)
+        local equippedKit = profile and profile.EquippedKit or "Default"
+        local kit = ProductsConfig.Items[equippedKit]
+        if kit and typeof(kit.AccentColor) == "Color3" then shortsColor = kit.AccentColor end
         bodyColors.TorsoColor3 = teamColor
         bodyColors.LeftArmColor3 = teamColor
         bodyColors.RightArmColor3 = teamColor
