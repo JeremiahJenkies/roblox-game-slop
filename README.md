@@ -1,55 +1,44 @@
 # PITCH — Competitive Soccer
 
-PITCH is a Roblox soccer game built with Luau and Rojo. Development follows the milestone brief: stabilize the foundation and test it before implementing ball physics, player actions, full match rules, matchmaking, AI, and ranked progression.
+Roblox soccer prototype built with Luau and Rojo. The active project is now a playable practice-mode foundation; match timer/halves and ranked features remain upcoming.
 
-## Current milestone: 1 — Foundation
+## Current build
+- Configurable generated football pitch (150 x 240 studs), mowing stripes, touchlines, halfway, centre circle, penalty/goal boxes, corner arcs, goals/nets, stepped stands, supports, floodlight towers, atmosphere and color grading.
+- Server-created football with dark panel detailing, server-owned physics, validated Pass/Shoot/Lob/Clearance requests, speed cap, anti-tunnelling checks, stuck/out-of-bounds recovery, low-frequency dribble nudges, and mathematical goal-plane scoring.
+- Practice score and player profile HUD; pass `Q`, shoot `E`, lob `F`, plus on-screen touch buttons.
+- Red/Blue teams and side-based spawn locations.
+- Server-controlled profile updates and persistent Coins/XP/Level/Wins/Losses/Goals/Assists/Saves/MatchesPlayed/cosmetic ownership template.
+- Cleanup of stale `IceYetiServer`, `SoccerServer`, old `IceYetiClient` and HUD instances when the new startup runs.
+- Runtime scripts don't set the restricted `Lighting.Technology` property. For higher quality shadows, choose `Future` in Studio's Lighting properties.
 
-- Modular Rojo layout with shared configuration, centralized remotes, utility modules, server services, and a client HUD.
-- Configuration-driven pitch: 150 studs wide x 240 studs long, alternating turf bands, halfway line, centre circle, penalty areas, goal areas, penalty spots, corner arcs, goals/nets, grandstands, floodlight towers, and invisible boundary walls.
-- Server-generated position markers: `TeamASpawn`, `TeamBSpawn`, `KickoffSpot`, and `BallSpawn`, each with attributes for downstream services.
-- Balanced Red and Blue teams; respawning players are placed at their team's marker.
-- DataService template includes Coins, XP, Level, Wins, Losses, Goals, Assists, Saves, MatchesPlayed, EquippedKit, EquippedBallTrail, EquippedGoalEffect, and Owned.
-- Legacy-data safety: keeps DataStore name `IceYetiSurvival_v1` and keys `player_<UserId>`. Loads previous lowercase aliases and writes a merged profile with `UpdateAsync`, preserving unrelated legacy fields such as historical `wins`, `bestDay`, `wood`, `stone`, `trophies`, and `discoveries`.
-- Studio-only `/stats` and `/pitch` development commands.
-- Runtime code does not try to write the Studio-only `Lighting.Technology` property. Set Lighting > Technology to Future manually in Studio if available.
+## Structure
+- `src/shared/Remotes.lua` — centralized RemoteEvents.
+- `src/shared/Config/` — pitch, ball, player, match, rewards configuration.
+- `src/shared/Util/` — Maid and Signal helpers.
+- `src/server/Bootstrap.server.lua` — fixed service order and legacy server cleanup.
+- `src/server/Services/DataService.lua` — profile loading, migration, merged saves.
+- `src/server/Services/PitchService.lua` — pitch, markings, goals, stands and lighting.
+- `src/server/Services/TeamService.lua` — balanced teams, spawning, simple team-coloured player appearance.
+- `src/server/Services/MatchService.lua` — practice score state and goal reward registration.
+- `src/server/Services/BallService.lua` — ball physics, kick validation, dribbling and goal crossing.
+- `src/server/DevCommands.server.lua` — Studio-only `/stats` and `/pitch`.
+- `src/client/UI/PITCHHUD.client.lua` — scoreboard, profile and readiness status.
+- `src/client/Controllers/InputController.client.lua` — PC/mobile input buttons and local ball shadow.
 
-## Rojo project structure
+## Sync to Studio
+1. Stop Play mode.
+2. In the project folder, run `git pull --ff-only origin main`.
+3. Stop the old Rojo terminal with Ctrl+C and run `rojo serve default.project.json`.
+4. Reconnect the Rojo Studio plugin to the host/port printed by Rojo.
+5. Press Play. Verify Output contains `[PITCH] Pitch generated`, `[BallService] Server-owned football created`, and `[PITCH] Foundation bootstrap complete.`
+6. In Explorer, check `Workspace.SoccerStadium.MatchBall`, `ServerScriptService.Services.BallService`, and `StarterPlayer.StarterPlayerScripts.Controllers.InputController`.
+7. Move within 13 studs of the ball and try Q (Pass), E (Shoot), F (Lob), or the on-screen buttons. Score a goal to verify the practice scoreboard changes.
 
-- `src/shared/Remotes.lua` — creates RemoteEvents on the server and exposes a client retrieval method.
-- `src/shared/Config/` — `PitchConfig.lua`, `BallConfig.lua`, `PlayerConfig.lua`, `MatchConfig.lua`, `RewardsConfig.lua`.
-- `src/shared/Util/` — `Maid.lua` and `Signal.lua`.
-- `src/server/Bootstrap.server.lua` — initializes services in a fixed order.
-- `src/server/Services/DataService.lua` — profiles, reconciliation, saves, migration-safe merges.
-- `src/server/Services/PitchService.lua` — stadium generation and position markers.
-- `src/server/Services/TeamService.lua` — team assignment and spawn placement.
-- `src/server/Services/MatchService.lua` — initial server-owned Lobby state and state snapshots.
-- `src/server/DevCommands.server.lua` — Studio-only commands.
-- `src/client/UI/PITCHHUD.client.lua` — foundation status and profile HUD.
-- `default.project.json` — maps only the new foundation into Roblox Studio. Legacy source folders are not mapped.
+## Persistence compatibility
+- Deliberately retains `IceYetiSurvival_v1` and `player_<UserId>`.
+- Existing legacy keys such as lowercase `coins`, historical `wins`, `bestDay`, `wood`, `stone`, `xp`, `trophies`, and `discoveries` are preserved on merged saves. Old survival wins are not converted to soccer wins.
+- DataStore testing should use a separate published test experience with API access enabled. Records do not automatically transfer to a separate experience.
 
-## Pull and run
-
-1. Open this repository folder in VS Code.
-2. Stop the old Rojo process with `Ctrl+C` in its terminal.
-3. Run `git pull --ff-only origin main`.
-4. Run `rojo serve default.project.json` and leave the terminal open.
-5. Connect the Roblox Studio Rojo plugin to the host/port printed by Rojo (often `127.0.0.1:34872`).
-6. Press Stop if a Studio playtest is active, reconnect Rojo, wait for sync, then press Play.
-7. In Studio Explorer, verify `ReplicatedStorage.Shared`, `ServerScriptService.Services`, and `StarterPlayer.StarterPlayerScripts.UI` exist. Remove stale `IceYetiServer`, `IceYetiClient`, or previous `SoccerServer` script instances if they remain after sync; do not delete the new `Bootstrap`, `Services`, or `PITCHHUD` instances.
-8. In Output, confirm a line like `[PITCH] Pitch generated: 150 x 240 studs; goals, markings, spawns and stands are ready.`
-9. In the Studio chat, try `/stats` to print the loaded profile and `/pitch` to regenerate the pitch.
-
-## Milestone 1 acceptance tests
-
-- [ ] Play starts with no runtime errors; Output shows `[Bootstrap] Initialized ...` for all four services.
-- [ ] A green pitch appears with turf bands, field markings, goals/nets, stands, floodlights, and safety walls.
-- [ ] The player spawns inside the pitch. Join with two Studio test clients and verify they are assigned Red/Blue and spawn on opposite sides.
-- [ ] `Workspace` has `PitchReady = true`; `Workspace.SoccerStadium` has `PitchReady = true` and pitch dimension attributes.
-- [ ] `/stats` prints the profile; rejoin in a published test experience with API access enabled to verify persistence.
-- [ ] Inspect an existing test player record before and after saving; confirm legacy fields remain. Do not test against production data.
-
-## Known limits and next milestone
-
-- This is only Milestone 1. The pitch and team foundation are implemented; the ball is not yet simulated, and kicking/goals/match rules are not considered complete. Milestone 2 will add the server-owned ball, validated kick inputs, speed caps, ball recovery, and math-based goal/boundary detection. Do not move to that milestone until the foundation acceptance tests pass.
-- Studio execution and DataStore persistence could not be run from this environment; validate the acceptance checklist locally.
-- To get higher-fidelity shadows, set Lighting > Technology to Future in Studio if the option is available; scripts deliberately do not set that restricted property.
+## Known limits
+- This is practice mode, not yet a finished competitive release. Formal halves, kick-off/restarts, fouls, goalkeeper controls, matchmaking, latency compensation and ranked ladders are still planned.
+- Repository source has been checked for intended Rojo mappings and the previous restricted `Lighting.Technology` assignment. It has not been executed inside Roblox Studio here; physics, mobile inputs and DataStore behavior still require a local test.
