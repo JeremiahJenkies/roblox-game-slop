@@ -1,8 +1,8 @@
 -- Shared configuration for Survive Ice Yetis For 100 Days.
 local Config = {}
 
-Config.GameName = "Survive Ice Yetis For 100 Days"
-Config.TargetDays = 100
+Config.GameName = "Survive 99 Nights in the Forest"
+Config.TargetDays = 99
 Config.DayLengthSeconds = 75
 Config.IntermissionSeconds = 12
 Config.BaseYetiHealth = 100
