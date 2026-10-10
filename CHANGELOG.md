@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-10 — Bobble heads, close control and shot power
+- Enlarged every player's head to 135% and added a client-side bobble animation that varies with movement.
+- Added server-controlled soft possession: when a moving player is close to the ball, the server nudges the ball into a controllable position ahead of their feet. It is not welded or anchored, so kicks and physics remain responsive.
+- Added a draggable 20–100% kick-power slider shared by passes, shots and lobs; the server still validates the requested power.
+- Fixed goal attribution after half-time side switching: goal scoring teams now depend on which half is active.
+- Fixed the goal lock edge case when a goal-plane crossing is rejected during a stoppage.
+- Cleared possession on kick-offs and restarts and avoided overwriting assist history with repeated dribble touches.
+- Roblox Studio multiplayer QA is still required before release; code has not been executed in Studio by this environment.
+
+
 ## 2026-10-10 — Match systems, stamina and cosmetics
 - Added fixed 60 Hz custom-force stepping for air drag, ground rolling resistance, sliding friction, spin decay, angular-speed caps and grounded sleep handling.
 - Added Studio-only ball test commands: `/ballreset`, `/ballshoot`, `/ballout` and `/ballinfo`.
