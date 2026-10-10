@@ -8,6 +8,9 @@ local Maid = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local playerMaids: {[Player]: any} = {}
 local DataService = require(servicesFolder:WaitForChild("DataService"))
 local PitchService = require(servicesFolder:WaitForChild("PitchService"))
+local BallService = require(servicesFolder:WaitForChild("BallService"))
+local BallConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("BallConfig"))
+local PitchConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("PitchConfig"))
 
 local function attach(player: Player)
     if playerMaids[player] then playerMaids[player]:Destroy() end
@@ -22,6 +25,34 @@ local function attach(player: Player)
             local ok, result = pcall(PitchService.Build)
             if ok then print("[DevCommands] Pitch rebuilt by " .. player.Name)
             else warn("[DevCommands] Pitch rebuild failed: " .. tostring(result)) end
+        elseif command == "/ballreset" then
+            BallService.ResetBall()
+            print("[DevCommands] Ball reset requested by " .. player.Name)
+        elseif command == "/ballshoot" then
+            local ball = BallService.GetBall()
+            if ball then
+                ball.AssemblyLinearVelocity = Vector3.zero
+                ball.AssemblyAngularVelocity = Vector3.zero
+                local direction = Vector3.new(0, 0.12, -1).Unit
+                ball:ApplyImpulse(direction * BallConfig.ShotPower * ball.AssemblyMass)
+                print("[DevCommands] Test shot fired. Ball speed: " .. tostring(math.floor(ball.AssemblyLinearVelocity.Magnitude)))
+            else
+                warn("[DevCommands] No ball exists yet.")
+            end
+        elseif command == "/ballout" then
+            local ball = BallService.GetBall()
+            if ball then
+                ball.CFrame = CFrame.new(PitchConfig.Width, PitchConfig.SurfaceCenterY + 3, 0)
+                ball.AssemblyLinearVelocity = Vector3.new(30, 0, 0)
+                print("[DevCommands] Out-of-bounds test triggered.")
+            end
+        elseif command == "/ballinfo" then
+            local ball = BallService.GetBall()
+            if ball then
+                print("[DevCommands] speed=" .. tostring(math.floor(ball.AssemblyLinearVelocity.Magnitude * 100) / 100)
+                    .. " spin=" .. tostring(math.floor(ball.AssemblyAngularVelocity.Magnitude * 100) / 100)
+                    .. " lastTouch=" .. tostring(ball:GetAttribute("LastTouchedByUserId")))
+            end
         end
     end))
 end
