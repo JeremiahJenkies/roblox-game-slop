@@ -87,6 +87,20 @@ function TeamService.PlaceCharacter(player: Player, character: Model)
     end
 end
 
+function TeamService.ResetEnds()
+    local stadium = workspace:FindFirstChild("SoccerStadium")
+    local redSpawn = stadium and stadium:FindFirstChild("TeamASpawn")
+    local blueSpawn = stadium and stadium:FindFirstChild("TeamBSpawn")
+    if not redSpawn or not blueSpawn or not redSpawn:IsA("BasePart") or not blueSpawn:IsA("BasePart") then return end
+    for _, player in ipairs(Players:GetPlayers()) do
+        local character = player.Character
+        local target = player:GetAttribute("Team") == "Blue" and blueSpawn or redSpawn
+        if character and character.Parent then
+            character:PivotTo(target.CFrame + Vector3.new(0, PlayerConfig.CharacterSpawnHeight, 0))
+        end
+    end
+end
+
 function TeamService.SwitchEnds()
     local stadium = workspace:FindFirstChild("SoccerStadium")
     local redSpawn = stadium and stadium:FindFirstChild("TeamASpawn")
