@@ -56,8 +56,8 @@ local function attach(player: Player)
         elseif command == "/dribletouch" then
             DribbleService.DebugTouch(player)
             print("[DevCommands] Forced a Studio-only test touch.")
-        elseif string.sub(command, 1, 13) == "/dribbleskill " then
-            local skill = tonumber(string.sub(command, 14))
+        elseif string.sub(command, 1, 14) == "/dribbleskill " then
+            local skill = tonumber(string.sub(command, 15))
             if skill then
                 player:SetAttribute("DribbleSkill", math.clamp(skill, 0, 1))
                 print("[DevCommands] DribbleSkill set to " .. tostring(player:GetAttribute("DribbleSkill")))
