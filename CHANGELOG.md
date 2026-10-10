@@ -2,12 +2,14 @@
 
 All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
-## 2026-10-10 — PITCH competitive soccer conversion
+## 2026-10-10 — Milestone 1: modular soccer foundation
 
-- Replaced the mapped Yeti survival server and HUD with a soccer stadium, Red/Blue teams, kick controls, ball physics, goals, match timer, scoreboard, and full-time rewards.
-- Fixed stadium startup: removed a runtime write to `Lighting.Technology` (a Studio-only setting) that could stop the server before the pitch and ball were created.
-- Added server-side startup diagnostics plus stadium atmosphere, color grading, bloom, sun rays, clouds, floodlight towers, and longer grandstands.
-- Added a clean `src/soccer` source layout and updated `default.project.json` to map only the soccer game into Studio.
-- Updated VS Code task names and project README for PITCH.
-- Preserved the existing `IceYetiSurvival_v1` DataStore name and `player_<UserId>` key pattern. New saves merge fields into existing records; legacy profile fields remain.
-- Verification is repository-level only. Ball physics, goal detection, multiplayer balance, and DataStore persistence still require Roblox Studio playtests.
+- Added a fixed-order server bootstrap, service modules, centralized RemoteEvent creation, Maid and Signal utilities, and a foundation HUD.
+- Added centralized pitch, ball, player, match and reward configuration modules.
+- Added a generated 150 x 240 stud football pitch with field markings, goals/nets, Red/Blue spawn markers, stands, floodlights, ambient lighting effects, and invisible outer boundaries.
+- Added balanced team assignment and team-side respawn placement.
+- Added profile template for Coins, XP, Level, Wins, Losses, Goals, Assists, Saves, MatchesPlayed, equipped cosmetics, and Owned.
+- Kept DataStore `IceYetiSurvival_v1` and `player_<UserId>` keys; data loading reconciles old lowercase fields and saves merge into existing records, retaining legacy survival fields.
+- Added Studio-only `/stats` and `/pitch` commands.
+- Removed the superseded monolithic soccer scripts from the repository source tree; Rojo now maps the modular `src/shared`, `src/server/Services`, and `src/client/UI` implementation.
+- Validation so far is repository-level only. Milestone 1 acceptance tests must be run in Studio before implementing Milestone 2 ball physics.
