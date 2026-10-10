@@ -200,16 +200,21 @@ function PitchService.Build()
     makeMarker(stadium, "KickoffSpot", Vector3.new(0, PitchConfig.MarkerY, 0), "Kickoff")
     makeMarker(stadium, "BallSpawn", Vector3.new(0, PitchConfig.BallMarkerY, 0), "Ball spawn")
 
-    -- Invisible safety walls sit outside the field and goal areas.
+    -- Invisible containment barriers sit just beyond the out-of-bounds detection zones.
+    -- Keep a gap after the restart threshold so BallService can award throw-ins, corners and goal kicks first.
     local wallColor = Color3.fromRGB(30, 39, 48)
     local wallHeight, wallThickness = PitchConfig.BoundaryHeight, PitchConfig.BoundaryThickness
+    local sideDetectionLimit = halfWidth + radius + 0.5
+    local endDetectionLimit = halfLength + PitchConfig.GoalDepth + radius + 2
+    local sideWallX = sideDetectionLimit + wallThickness / 2 + 3
+    local endWallZ = endDetectionLimit + wallThickness / 2 + 3
     for _, xSign in ipairs({-1, 1}) do
-        local x = xSign * (halfWidth + PitchConfig.StandOffset + wallThickness)
-        makePart(stadium, "InvisibleSideBoundary", Vector3.new(wallThickness, wallHeight, length + 2 * PitchConfig.GroundMargin), CFrame.new(x, wallHeight / 2, 0), wallColor, Enum.Material.SmoothPlastic, 1)
+        makePart(stadium, "InvisibleSideBoundary", Vector3.new(wallThickness, wallHeight, length + 2 * PitchConfig.GoalDepth + 20),
+            CFrame.new(xSign * sideWallX, wallHeight / 2, 0), wallColor, Enum.Material.SmoothPlastic, 1)
     end
     for _, zSign in ipairs({-1, 1}) do
-        local z = zSign * (halfLength + PitchConfig.GroundMargin - 3)
-        makePart(stadium, "InvisibleEndBoundary", Vector3.new(width + 2 * PitchConfig.GroundMargin, wallHeight, wallThickness), CFrame.new(0, wallHeight / 2, z), wallColor, Enum.Material.SmoothPlastic, 1)
+        makePart(stadium, "InvisibleEndBoundary", Vector3.new(width + 2 * PitchConfig.GoalDepth + 20, wallHeight, wallThickness),
+            CFrame.new(0, wallHeight / 2, zSign * endWallZ), wallColor, Enum.Material.SmoothPlastic, 1)
     end
 
     if PitchConfig.DecorativePartsEnabled then
