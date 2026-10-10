@@ -289,10 +289,11 @@ local function attemptSkillMove(player: Player, moveName: any)
     lastSkillAt[player] = now
     if possessorId ~= player.UserId then
         local incoming = currentBall.AssemblyLinearVelocity
+        local incomingAngular = currentBall.AssemblyAngularVelocity
         recordTouch(player)
         attachPossession(player, root)
         currentBall.AssemblyLinearVelocity = Vector3.new(incoming.X * 0.58, math.max(0, incoming.Y * 0.35), incoming.Z * 0.58)
-        currentBall.AssemblyAngularVelocity *= 0.72
+        currentBall.AssemblyAngularVelocity = incomingAngular * 0.72
     end
     local side = 1
     local moveDirection = Vector3.new(humanoid.MoveDirection.X, 0, humanoid.MoveDirection.Z)
@@ -626,10 +627,11 @@ function BallService.Init()
                 if chosenPlayer and chosenRoot then
                     -- First-touch control cushions a moving ball while retaining some of its momentum.
                     local incoming = currentBall.AssemblyLinearVelocity
+                    local incomingAngular = currentBall.AssemblyAngularVelocity
                     recordTouch(chosenPlayer)
                     attachPossession(chosenPlayer, chosenRoot)
                     currentBall.AssemblyLinearVelocity = Vector3.new(incoming.X * 0.58, math.max(0, incoming.Y * 0.35), incoming.Z * 0.58)
-                    currentBall.AssemblyAngularVelocity *= 0.72
+                    currentBall.AssemblyAngularVelocity = incomingAngular * 0.72
                 end
             end
 
