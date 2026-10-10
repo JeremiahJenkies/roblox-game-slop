@@ -65,3 +65,11 @@ All dates use ISO format (YYYY-MM-DD). Newest entries first.
 - Added configurable pitch, lines, goals/nets, stepped stands, floodlights, spawn markers and Red/Blue team placement.
 - Preserved the existing DataStore name/key format and merged profile writes with UpdateAsync.
 - Removed the restricted runtime assignment to Lighting.Technology.
+
+## Advanced impulse dribbling
+- Added configurable server-authoritative touch-based dribbling and stationary trapping without ball-to-player constraints.
+- Reconciled BallService possession with logical possession attributes; removed the old AlignPosition-based glued-ball loop.
+- Added skill/stamina-sensitive touches, sprint lead, touch lockout after kicks, skill move requests (knock-on, drag-back, feint, step-over, quick turn and shield), and tackle loose-ball impulses.
+- Added mobile buttons and keyboard/gamepad bindings for additional skill moves.
+- Added Studio-only debug commands: /dribbledebug, /dribbledebugoff, /dribletouch and /dribbleskill 0.0..1.0.
+- Studio runtime, multiplayer contest, performance, animation and sound tests remain required.
