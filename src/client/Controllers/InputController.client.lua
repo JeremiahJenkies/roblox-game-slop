@@ -12,6 +12,7 @@ local PlayerConfig = require(Shared:WaitForChild("Config"):WaitForChild("PlayerC
 local Remotes = require(Shared:WaitForChild("Remotes"))
 local events = Remotes.GetClient()
 local kickRemote: RemoteEvent = events.KickBall
+local actionRemote: RemoteEvent = events.ActionRequest
 
 -- Clear only known old prototype scripts and their duplicate interface.
 for _, child in ipairs(player:WaitForChild("PlayerScripts"):GetChildren()) do
@@ -83,15 +84,15 @@ local sprinting = false
 local humanoid: Humanoid? = nil
 
 local function applySprint()
-    local character = player.Character
-    local currentHumanoid = character and character:FindFirstChildOfClass("Humanoid")
-    humanoid = currentHumanoid
-    if currentHumanoid then
-        currentHumanoid.WalkSpeed = sprinting and PlayerConfig.SprintSpeed or PlayerConfig.WalkSpeed
-    end
+    actionRemote:FireServer("Sprint", sprinting)
     sprintButton.Text = sprinting and "SPRINT ON" or ("SPRINT\n" .. (isTouch and "TAP TO TOGGLE" or "[SHIFT]"))
     sprintButton.BackgroundColor3 = sprinting and Color3.fromRGB(34, 151, 91) or Color3.fromRGB(183, 116, 35)
 end
+player:GetAttributeChangedSignal("Sprinting"):Connect(function()
+    sprinting = player:GetAttribute("Sprinting") == true
+    sprintButton.Text = sprinting and "SPRINT ON" or ("SPRINT\n" .. (isTouch and "TAP TO TOGGLE" or "[SHIFT]"))
+    sprintButton.BackgroundColor3 = sprinting and Color3.fromRGB(34, 151, 91) or Color3.fromRGB(183, 116, 35)
+end)
 
 player.CharacterAdded:Connect(function(character)
     sprinting = false
