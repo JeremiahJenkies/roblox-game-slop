@@ -23,6 +23,11 @@ local maid = Maid.new()
 local kickRemote: RemoteEvent? = nil
 local noticeRemote: RemoteEvent? = nil
 local radius = BallConfig.Radius
+local physicsAccumulator = 0
+local slowGroundSince: number? = nil
+local physicsRayParams = RaycastParams.new()
+physicsRayParams.FilterType = Enum.RaycastFilterType.Exclude
+physicsRayParams.IgnoreWater = true
 
 local function finiteNumber(value: number): boolean
     return value == value and value ~= math.huge and value ~= -math.huge
@@ -147,6 +152,7 @@ local function createBall()
     newBall:SetAttribute("PreviousTouchedTeam", "")
     newBall.Parent = stadium
     ball = newBall
+    physicsRayParams.FilterDescendantsInstances = {newBall}
     addBallPanels(newBall)
     pcall(function() newBall:SetNetworkOwner(nil) end)
     previousPosition = newBall.Position
@@ -341,19 +347,55 @@ function BallService.Init()
         lastKickAt[player] = nil
         lastDribbleAt[player] = nil
     end))
-    maid:GiveTask(RunService.Heartbeat:Connect(function()
+    maid:GiveTask(RunService.Heartbeat:Connect(function(deltaTime: number)
         local currentBall = ball
         local currentStadium = stadium
         if not currentBall or not currentBall.Parent or not currentStadium or not currentStadium.Parent then return end
-        local currentPosition = currentBall.Position
-        local velocity = currentBall.AssemblyLinearVelocity
-        if velocity.Magnitude > BallConfig.MaxSpeed then
-            currentBall.AssemblyLinearVelocity = velocity.Unit * BallConfig.MaxSpeed
-            velocity = currentBall.AssemblyLinearVelocity
-        elseif velocity.Magnitude < BallConfig.RestSpeed and velocity.Magnitude > 0 then
-            currentBall.AssemblyLinearVelocity = Vector3.zero
-            currentBall.AssemblyAngularVelocity = Vector3.zero
+
+        -- Fixed 60 Hz custom-force step so drag and spin decay are independent of server frame rate.
+        physicsAccumulator = math.min(physicsAccumulator + math.min(deltaTime, 0.1), 0.2)
+        local fixedStep = 1 / 60
+        while physicsAccumulator >= fixedStep do
+            physicsAccumulator -= fixedStep
+            local velocity = currentBall.AssemblyLinearVelocity
+            local angular = currentBall.AssemblyAngularVelocity
+            if velocity.Magnitude > BallConfig.MaxSpeed then
+                velocity = velocity.Unit * BallConfig.MaxSpeed
+            end
+            if angular.Magnitude > BallConfig.MaxAngularSpeed then
+                angular = angular.Unit * BallConfig.MaxAngularSpeed
+            end
+
+            local groundHit = Workspace:Raycast(currentBall.Position, Vector3.new(0, -(radius + 0.16), 0), physicsRayParams)
+            local horizontal = Vector3.new(velocity.X, 0, velocity.Z)
+            if groundHit and velocity.Y <= BallConfig.MinBounceSpeed then
+                local resistance = horizontal.Magnitude > 3 and BallConfig.SlidingFriction or BallConfig.GroundRollingResistance
+                local reducedSpeed = math.max(0, horizontal.Magnitude - resistance * fixedStep)
+                if horizontal.Magnitude > 0.001 then horizontal = horizontal.Unit * reducedSpeed end
+                local vertical = math.abs(velocity.Y) < BallConfig.MinBounceSpeed and 0 or velocity.Y * 0.25
+                velocity = Vector3.new(horizontal.X, vertical, horizontal.Z)
+                if horizontal.Magnitude <= BallConfig.RestSpeed and math.abs(vertical) < BallConfig.RestSpeed then
+                    slowGroundSince = slowGroundSince or os.clock()
+                    if os.clock() - slowGroundSince >= BallConfig.SleepSeconds then
+                        velocity = Vector3.zero
+                        angular = Vector3.zero
+                    end
+                else
+                    slowGroundSince = nil
+                end
+            else
+                slowGroundSince = nil
+                local speed = velocity.Magnitude
+                if speed > 0.001 then
+                    velocity -= velocity.Unit * (BallConfig.AirDrag * speed * speed * fixedStep)
+                end
+            end
+            angular *= math.max(0, 1 - BallConfig.SpinDecay * fixedStep)
+            currentBall.AssemblyLinearVelocity = velocity
+            currentBall.AssemblyAngularVelocity = angular
         end
+
+        local currentPosition = currentBall.Position
         if checkForGoal(previousPosition, currentPosition) then
             previousPosition = currentBall.Position
             return
