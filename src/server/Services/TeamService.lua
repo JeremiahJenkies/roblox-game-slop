@@ -51,6 +51,16 @@ end
 
 local function applyFootballAppearance(player: Player, character: Model)
     local teamName = player:GetAttribute("Team") or (player.Team and player.Team.Name) or "Red"
+    -- Oversized heads are the game's signature look. Apply once per spawned character.
+    local head = character:FindFirstChild("Head")
+    if head and head:IsA("BasePart") and head:GetAttribute("PITCHBobbleScaled") ~= true then
+        head.Size = head.Size * 1.35
+        head:SetAttribute("PITCHBobbleScaled", true)
+        local neck = character:FindFirstChild("Neck", true)
+        if neck and neck:IsA("Motor6D") then
+            neck.C1 = CFrame.new(neck.C1.Position + Vector3.new(0, -0.12, 0)) * neck.C1.Rotation
+        end
+    end
     -- Large wings, layered clothing and tools can interfere with tackles and make the practice camera unreadable.
     -- The foundation uses simple team-coloured bodies; cosmetic kits will replace this in a later milestone.
     for _, child in ipairs(character:GetChildren()) do
