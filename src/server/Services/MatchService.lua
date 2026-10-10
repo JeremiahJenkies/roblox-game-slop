@@ -18,7 +18,8 @@ end
 function MatchService.Init()
     local folder = Remotes.InitServer()
     stateEvent = folder:WaitForChild("StateUpdate") :: RemoteEvent
-    stateEvent.OnServerEvent:Connect(function(player: Player, action: any)
+    local stateRequest = folder:WaitForChild("StateRequest") :: RemoteEvent
+    stateRequest.OnServerEvent:Connect(function(player: Player, action: any)
         -- Clients may request a fresh snapshot, but cannot submit match-state changes.
         if action == "RequestState" then stateEvent:FireClient(player, table.clone(state)) end
     end)
