@@ -42,6 +42,8 @@ local rng = Random.new()
 local mapFolder
 local yetisFolder
 local lobbySpawn
+local campFuel = 100
+local campfireFlame
 
 local function broadcast()
 	stateEvent:FireAllClients({
@@ -50,6 +52,7 @@ local function broadcast()
 		phase = phase,
 		secondsLeft = secondsLeft,
 		alive = #Players:GetPlayers(),
+		campFuel = campFuel,
 	})
 end
 
@@ -114,7 +117,32 @@ local function buildWorld()
 	-- A warm, safe camp contrasts with the haunted blue ice forest.
 	makePart(mapFolder, "CampfireBowl", Vector3.new(5, 1, 5), CFrame.new(0, 1, 66), Color3.fromRGB(38, 31, 38), Enum.Material.Basalt)
 	local flame = makePart(mapFolder, "HalloweenFlame", Vector3.new(1.8, 2.8, 1.8), CFrame.new(0, 2.8, 66), Color3.fromRGB(255, 91, 28), Enum.Material.Neon)
+	campfireFlame = flame
 	flame.Shape = Enum.PartType.Ball
+	local fuelPrompt = Instance.new("ProximityPrompt")
+	fuelPrompt.Name = "AddCampfireFuel"
+	fuelPrompt.ActionText = "Feed Fire (1 Wood)"
+	fuelPrompt.ObjectText = "Campfire Fuel: 100%"
+	fuelPrompt.HoldDuration = 0.35
+	fuelPrompt.MaxActivationDistance = 12
+	fuelPrompt.RequiresLineOfSight = false
+	fuelPrompt.Parent = flame
+	fuelPrompt.Triggered:Connect(function(player)
+		local data = profiles[player]
+		if not data or data.wood < 1 then
+			noticeEvent:FireClient(player, "You need at least 1 wood to feed the campfire.")
+			return
+		end
+		if campFuel >= 100 then
+			noticeEvent:FireClient(player, "The campfire is already full.")
+			return
+		end
+		data.wood -= 1
+		campFuel = math.min(100, campFuel + 22)
+		player:SetAttribute("Wood", data.wood)
+		fuelPrompt.ObjectText = "Campfire Fuel: " .. math.floor(campFuel) .. "%"
+		noticeEvent:FireClient(player, "You added wood to the campfire. Keep the flame alive!")
+	end)
 	local fireLight = Instance.new("PointLight")
 	fireLight.Color = Color3.fromRGB(255, 105, 45)
 	fireLight.Brightness = 2.2
@@ -146,6 +174,25 @@ local function buildWorld()
 			crown.Shape = Enum.PartType.Ball
 			crown.CanCollide = false
 			crown.CastShadow = true
+			local harvestPrompt = Instance.new("ProximityPrompt")
+			harvestPrompt.Name = "HarvestWood"
+			harvestPrompt.ActionText = "Gather Wood"
+			harvestPrompt.ObjectText = "Dead Pine"
+			harvestPrompt.HoldDuration = 0.7
+			harvestPrompt.MaxActivationDistance = 10
+			harvestPrompt.RequiresLineOfSight = false
+			harvestPrompt.Parent = trunk
+			local harvested = false
+			harvestPrompt.Triggered:Connect(function(player)
+				local data = profiles[player]
+				if harvested or not data then return end
+				harvested = true
+				data.wood += 3
+				player:SetAttribute("Wood", data.wood)
+				noticeEvent:FireClient(player, "+3 wood gathered")
+				trunk:Destroy()
+				if crown.Parent then crown:Destroy() end
+			end)
 			if i % 4 == 0 then
 				local pumpkin = makePart(mapFolder, "GlowingPumpkin", Vector3.new(2.8, 2.4, 2.8), CFrame.new(x + 3, 1.4, z + 2), Color3.fromRGB(255, 111, 35), Enum.Material.Neon)
 				pumpkin.Shape = Enum.PartType.Ball
@@ -157,6 +204,72 @@ local function buildWorld()
 			end
 		end
 	end
+
+	for i = 1, 18 do
+		local x = rng:NextInteger(-118, 118)
+		local z = rng:NextInteger(-112, 28)
+		if math.abs(x) > 20 then
+			local rock = makePart(mapFolder, "HarvestableFrostRock", Vector3.new(4, 3, 4), CFrame.new(x, 1.1, z), Color3.fromRGB(103, 128, 151), Enum.Material.Rock)
+			rock.Shape = Enum.PartType.Ball
+			local prompt = Instance.new("ProximityPrompt")
+			prompt.ActionText = "Mine Stone"
+			prompt.ObjectText = "Frost Rock"
+			prompt.HoldDuration = 0.8
+			prompt.MaxActivationDistance = 9
+			prompt.RequiresLineOfSight = false
+			prompt.Parent = rock
+			local mined = false
+			prompt.Triggered:Connect(function(player)
+				local data = profiles[player]
+				if mined or not data then return end
+				mined = true
+				data.stone += 2
+				player:SetAttribute("Stone", data.stone)
+				noticeEvent:FireClient(player, "+2 stone mined")
+				rock:Destroy()
+			end)
+		end
+	end
+
+	local bench = makePart(mapFolder, "CraftingBench", Vector3.new(5, 2, 3), CFrame.new(13, 1.5, 65), Color3.fromRGB(92, 57, 42), Enum.Material.WoodPlanks)
+	local benchPrompt = Instance.new("ProximityPrompt")
+	benchPrompt.ActionText = "Build Shelter (15 Wood, 8 Stone)"
+	benchPrompt.ObjectText = "Camp Workbench"
+	benchPrompt.HoldDuration = 1
+	benchPrompt.MaxActivationDistance = 12
+	benchPrompt.RequiresLineOfSight = false
+	benchPrompt.Parent = bench
+	benchPrompt.Triggered:Connect(function(player)
+		local data = profiles[player]
+		if not data then return end
+		if mapFolder:FindFirstChild("TeamShelter") then
+			noticeEvent:FireClient(player, "Your team shelter is already built.")
+			return
+		end
+		if data.wood < 15 or data.stone < 8 then
+			noticeEvent:FireClient(player, "Shelter needs 15 wood and 8 stone. Gather from trees and rocks.")
+			return
+		end
+		data.wood -= 15; data.stone -= 8
+		player:SetAttribute("Wood", data.wood); player:SetAttribute("Stone", data.stone)
+		local shelter = Instance.new("Model")
+		shelter.Name = "TeamShelter"
+		shelter.Parent = mapFolder
+		local function piece(name, size, pos, color, material)
+			local p = makePart(shelter, name, size, CFrame.new(pos), color, material)
+			p.CastShadow = true
+			return p
+		end
+		piece("Floor", Vector3.new(18, 1, 14), Vector3.new(24, 0.7, 65), Color3.fromRGB(91, 66, 51), Enum.Material.WoodPlanks)
+		piece("BackWall", Vector3.new(18, 8, 1), Vector3.new(24, 5, 58), Color3.fromRGB(66, 56, 55), Enum.Material.WoodPlanks)
+		piece("LeftWall", Vector3.new(1, 8, 14), Vector3.new(15, 5, 65), Color3.fromRGB(76, 61, 56), Enum.Material.WoodPlanks)
+		piece("RightWall", Vector3.new(1, 8, 14), Vector3.new(33, 5, 65), Color3.fromRGB(76, 61, 56), Enum.Material.WoodPlanks)
+		piece("FrontLeft", Vector3.new(6, 8, 1), Vector3.new(18, 5, 72), Color3.fromRGB(76, 61, 56), Enum.Material.WoodPlanks)
+		piece("FrontRight", Vector3.new(6, 8, 1), Vector3.new(30, 5, 72), Color3.fromRGB(76, 61, 56), Enum.Material.WoodPlanks)
+		piece("Roof", Vector3.new(20, 1, 16), Vector3.new(24, 9.5, 65), Color3.fromRGB(42, 48, 61), Enum.Material.Slate)
+		task.spawn(saveProfile, player)
+		noticeEvent:FireAllClients(player.Name .. " built the team shelter!")
+	end)
 
 	for i = 1, 7 do
 		local x = (i % 2 == 0) and -34 or 34
@@ -170,13 +283,13 @@ local function buildWorld()
 end
 
 local function defaultProfile()
-	return {coins = 0, bestDay = 0, wins = 0}
+	return {coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0}
 end
 
 local function saveProfile(player)
 	local data = profiles[player]
 	if not data or not store then return end
-	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins}
+	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone}
 	local ok, err = pcall(function()
 		store:SetAsync("player_" .. player.UserId, payload)
 	end)
@@ -195,6 +308,8 @@ local function loadProfile(player)
 		data.coins = math.max(0, tonumber(saved.coins) or 0)
 		data.bestDay = math.clamp(tonumber(saved.bestDay) or 0, 0, Config.TargetDays)
 		data.wins = math.max(0, tonumber(saved.wins) or 0)
+		data.wood = math.max(0, tonumber(saved.wood) or 0)
+		data.stone = math.max(0, tonumber(saved.stone) or 0)
 	elseif store and not ok then
 		warn("[IceYeti] Data load failed for " .. player.Name .. ": " .. tostring(saved))
 	end
@@ -202,6 +317,8 @@ local function loadProfile(player)
 	player:SetAttribute("Coins", data.coins)
 	player:SetAttribute("BestDay", data.bestDay)
 	player:SetAttribute("Wins", data.wins)
+	player:SetAttribute("Wood", data.wood)
+	player:SetAttribute("Stone", data.stone)
 end
 
 local function livingPlayers()
@@ -289,7 +406,8 @@ local function spawnYeti(day, spawnPosition)
 				local char = player.Character
 				local targetRoot = char and char:FindFirstChild("HumanoidRootPart")
 				local d = targetRoot and (targetRoot.Position - root.Position).Magnitude
-				if d and (not dist or d < dist) then target, dist = player, d end
+				local campDistance = targetRoot and (targetRoot.Position - Vector3.new(0, 0, 66)).Magnitude or math.huge
+				if d and not (campFuel > 0 and campDistance <= 25) and (not dist or d < dist) then target, dist = player, d end
 			end
 			if target then
 				local targetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
@@ -391,7 +509,11 @@ task.spawn(function()
 		secondsLeft = Config.IntermissionSeconds
 		if yetisFolder then yetisFolder:ClearAllChildren() end
 		notifyAll("The camp is safe... for now.")
-		while secondsLeft > 0 do broadcast(); task.wait(1); secondsLeft -= 1 end
+		while secondsLeft > 0 do
+			campFuel = math.max(0, campFuel - 0.08)
+			if campfireFlame then campfireFlame.Transparency = campFuel > 0 and 0 or 0.75 end
+			broadcast(); task.wait(1); secondsLeft -= 1
+		end
 
 		currentDay += 1
 		if currentDay > Config.TargetDays then
@@ -420,6 +542,8 @@ task.spawn(function()
 			spawnYeti(currentDay, Vector3.new(x, 0, z))
 		end
 		while secondsLeft > 0 do
+			campFuel = math.max(0, campFuel - 0.35)
+			if campfireFlame then campfireFlame.Transparency = campFuel > 0 and 0 or 0.75 end
 			broadcast()
 			if #livingPlayers() == 0 and #Players:GetPlayers() > 0 then
 				notifyAll("Everyone is down! Hold on until the next camp phase.")
