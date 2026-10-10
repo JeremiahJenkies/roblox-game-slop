@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-10 — Advanced dribbling and first-touch control
+- Added server-validated Feint and Step Over skill moves, with a cooldown and checks for match phase, player life state, ball distance, and opposing possession.
+- Added Z (Feint) and X (Step Over) keyboard controls plus mobile buttons.
+- Ball carrier's close-control target shifts side-to-side briefly during skills rather than teleporting the ball.
+- First-touch acquisition cushions the ball's horizontal speed and spin while retaining part of its momentum.
+- Preserved the existing remote system, DataStore configuration, player profile keys, kicking, tackling, and restart flow.
+- Roblox Studio runtime/multiplayer testing has not been performed in this environment.
+
 ## 2026-10-10 — Close-control dribbling and tackles
 - Replaced loose velocity nudges with server-controlled AlignPosition possession, keeping the ball unanchored but following the ball carrier's feet.
 - Automatically gives possession to the nearest living player who reaches the ball; the ball follows in front of their facing direction while they move or pause.
