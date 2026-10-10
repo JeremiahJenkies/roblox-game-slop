@@ -7,6 +7,7 @@ local Workspace = game:GetService("Workspace")
 local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
+local EnemySpawner = require(script.Parent:WaitForChild("EnemySpawner"))
 
 -- DataStores are unavailable in unpublished places or when Studio API access is disabled.
 -- Never let that stop the remotes and core game from starting.
@@ -868,6 +869,7 @@ task.spawn(function()
 		if atmosphere then atmosphere.Color = Color3.fromRGB(156, 190, 211); atmosphere.Decay = Color3.fromRGB(45, 63, 78) end
 		secondsLeft = Config.IntermissionSeconds
 		if yetisFolder then yetisFolder:ClearAllChildren() end
+		EnemySpawner.ClearRound()
 		notifyAll("The camp is safe... for now.")
 		while secondsLeft > 0 do
 			campFuel = math.max(0, campFuel - 0.08)
@@ -910,11 +912,20 @@ task.spawn(function()
 			if atmosphere then atmosphere.Color = Color3.fromRGB(156, 190, 211); atmosphere.Decay = Color3.fromRGB(45, 63, 78) end
 			notifyAll("DAY " .. currentDay .. " — THE ICE YETIS ARE HUNTING!")
 		end
-		local spawnCount = math.clamp(1 + math.floor((currentDay - 1) / 5) + (currentDay % 5 == 0 and 1 or 0), 1, 12)
-		for i = 1, spawnCount do
-			local x = rng:NextInteger(-90, 90)
-			local z = rng:NextInteger(-105, 5)
-			spawnYeti(currentDay, Vector3.new(x, 0, z))
+		-- If designers configure spawn points and templates, use the modular spawner.
+		-- Otherwise preserve the original generated-yeti wave unchanged.
+		if EnemySpawner.HasConfiguredSpawnPoints() then
+			local configuredCount = EnemySpawner.SpawnForDay(currentDay, yetisFolder)
+			if configuredCount == 0 then
+				warn("[IceYeti] Configured spawn points produced no enemies. Check EnemyTemplates and spawn attributes.")
+			end
+		else
+			local spawnCount = math.clamp(1 + math.floor((currentDay - 1) / 5) + (currentDay % 5 == 0 and 1 or 0), 1, 12)
+			for i = 1, spawnCount do
+				local x = rng:NextInteger(-90, 90)
+				local z = rng:NextInteger(-105, 5)
+				spawnYeti(currentDay, Vector3.new(x, 0, z))
+			end
 		end
 		while secondsLeft > 0 do
 			campFuel = math.max(0, campFuel - 0.35)
