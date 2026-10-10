@@ -4,19 +4,32 @@
     "$className": "DataModel",
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
-      "Shared": { "$path": "src/shared" }
+      "Shared": {
+        "$path": "src/shared"
+      }
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "Bootstrap": { "$path": "src/server/Bootstrap.server.lua" },
-      "DevCommands": { "$path": "src/server/DevCommands.server.lua" },
-      "Services": { "$path": "src/server/Services" }
+      "Bootstrap": {
+        "$path": "src/server/Bootstrap.server.lua"
+      },
+      "DevCommands": {
+        "$path": "src/server/DevCommands.server.lua"
+      },
+      "Services": {
+        "$path": "src/server/Services"
+      }
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "UI": { "$path": "src/client/UI" }
+        "UI": {
+          "$path": "src/client/UI"
+        },
+        "Controllers": {
+          "$path": "src/client/Controllers"
+        }
       }
     }
   }
