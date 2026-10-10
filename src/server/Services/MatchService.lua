@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local MatchService = {}
-local state = {phase = "LOBBY", secondsLeft = 0, matchNumber = 0, redScore = 0, blueScore = 0}
+local state: {[string]: any} = {phase = "LOBBY", secondsLeft = 0, matchNumber = 0, redScore = 0, blueScore = 0}
 local stateEvent: RemoteEvent? = nil
 
 function MatchService.GetState()
@@ -17,14 +17,15 @@ end
 
 function MatchService.Init()
     local folder = Remotes.InitServer()
-    stateEvent = folder:WaitForChild("StateUpdate") :: RemoteEvent
+    local stateUpdateEvent = folder:WaitForChild("StateUpdate") :: RemoteEvent
+    stateEvent = stateUpdateEvent
     local stateRequest = folder:WaitForChild("StateRequest") :: RemoteEvent
     stateRequest.OnServerEvent:Connect(function(player: Player, action: any)
         -- Clients may request a fresh snapshot, but cannot submit match-state changes.
-        if action == "RequestState" then stateEvent:FireClient(player, table.clone(state)) end
+        if action == "RequestState" then stateUpdateEvent:FireClient(player, table.clone(state)) end
     end)
     Players.PlayerAdded:Connect(function(player)
-        task.defer(function() if player.Parent then stateEvent:FireClient(player, table.clone(state)) end end)
+        task.defer(function() if player.Parent then stateUpdateEvent:FireClient(player, table.clone(state)) end end)
     end)
     task.spawn(function()
         while true do
