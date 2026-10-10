@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-10 — Match systems, stamina and cosmetics
+- Reworked match lifecycle around intermission, kick-off, timed halves, half-time, full-time and automatic rematches.
+- Added duplicate-goal protection, goal/restart countdown alignment, match participation/win/draw/loss rewards, and half-time team-side switching.
+- Added server-authoritative sprint requests, stamina drain/regeneration and a client stamina meter; client no longer sets its own WalkSpeed.
+- Added configurable match options and supported team-size presets, plus visual-quality preset configuration.
+- Added an earnable cosmetic catalog and server-validated locker for kits, ball trails and goal effects. Cosmetics do not grant gameplay advantages.
+- Kept the existing DataStore name and player key scheme unchanged.
+- Studio multiplayer, mobile, physics and DataStore tests are still required; these changes have not been run in Roblox Studio from this environment.
+
+
 All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
 ## 2026-10-10 — Playable soccer practice build
