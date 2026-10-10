@@ -3,6 +3,11 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+-- Remove an old HUD that can survive a Rojo remapping from the previous prototype.
+for _, child in ipairs(playerGui:GetChildren()) do
+    if child:IsA("ScreenGui") and (child.Name == "SoccerHUD" or child.Name == "IceYetiHUD") then child:Destroy() end
+end
 local events = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes")).GetClient()
 local stateEvent: RemoteEvent = events.StateUpdate
 local noticeEvent: RemoteEvent = events.Notice
@@ -24,7 +29,7 @@ gui.Name = "PITCHHUD"
 gui.ResetOnSpawn = false
 gui.DisplayOrder = 20
 gui.IgnoreGuiInset = false
-gui.Parent = player:WaitForChild("PlayerGui")
+gui.Parent = playerGui
 
 local function rounded(instance: Instance, radius: number)
     local corner = Instance.new("UICorner")
@@ -52,7 +57,7 @@ local top = Instance.new("Frame")
 top.Name = "PITCHHeader"
 top.AnchorPoint = Vector2.new(0.5, 0)
 top.Position = UDim2.new(0.5, 0, 0, 16)
-top.Size = UDim2.new(0.76, 0, 0, 95)
+top.Size = UDim2.new(0.76, 0, 0, 108)
 top.BackgroundColor3 = COLORS.Background
 top.BackgroundTransparency = 0.06
 top.Parent = gui
@@ -61,14 +66,17 @@ local topStroke = Instance.new("UIStroke")
 topStroke.Color = Color3.fromRGB(107, 134, 153)
 topStroke.Transparency = 0.45
 topStroke.Parent = top
-label(top, "Title", "P I T C H", UDim2.new(1, 0, 0, 31), UDim2.fromOffset(0, 7), 23, COLORS.Text, Enum.Font.GothamBlack)
-label(top, "Subtitle", "COMPETITIVE SOCCER  /  FOUNDATION BUILD", UDim2.new(1, 0, 0, 15), UDim2.fromOffset(0, 39), 10, COLORS.Muted)
-local phaseLabel = label(top, "Phase", "LOBBY", UDim2.new(1, 0, 0, 22), UDim2.fromOffset(0, 61), 13, COLORS.Green, Enum.Font.GothamBlack)
+label(top, "Title", "P I T C H", UDim2.new(1, 0, 0, 25), UDim2.fromOffset(0, 4), 22, COLORS.Text, Enum.Font.GothamBlack)
+label(top, "Subtitle", "COMPETITIVE SOCCER  /  PRACTICE MODE", UDim2.new(1, 0, 0, 13), UDim2.fromOffset(0, 30), 9, COLORS.Muted)
+local redScoreLabel = label(top, "RedScore", "RED  0", UDim2.new(0.25, 0, 0, 23), UDim2.new(0.12, 0, 0, 44), 16, COLORS.Red, Enum.Font.GothamBlack)
+local scoreSeparator = label(top, "ScoreSeparator", "—", UDim2.new(0.1, 0, 0, 23), UDim2.new(0.45, 0, 0, 44), 16, COLORS.Text, Enum.Font.GothamBlack)
+local blueScoreLabel = label(top, "BlueScore", "0  BLUE", UDim2.new(0.25, 0, 0, 23), UDim2.new(0.63, 0, 0, 44), 16, COLORS.Blue, Enum.Font.GothamBlack)
+local phaseLabel = label(top, "Phase", "PRACTICE", UDim2.new(1, 0, 0, 17), UDim2.fromOffset(0, 79), 11, COLORS.Green, Enum.Font.GothamBlack)
 
 local statusBar = Instance.new("Frame")
 statusBar.Name = "StadiumStatus"
 statusBar.AnchorPoint = Vector2.new(0.5, 0)
-statusBar.Position = UDim2.new(0.5, 0, 0, 121)
+statusBar.Position = UDim2.new(0.5, 0, 0, 132)
 statusBar.Size = UDim2.new(0.52, 0, 0, 34)
 statusBar.BackgroundColor3 = COLORS.Panel
 statusBar.BackgroundTransparency = 0.08
@@ -78,7 +86,7 @@ local stadiumLabel = label(statusBar, "StadiumReady", "GENERATING STADIUM...", U
 
 local teamCard = Instance.new("Frame")
 teamCard.Name = "TeamCard"
-teamCard.Position = UDim2.new(0, 18, 0, 174)
+teamCard.Position = UDim2.new(0, 18, 0, 180)
 teamCard.Size = UDim2.fromOffset(208, 112)
 teamCard.BackgroundColor3 = COLORS.Background
 teamCard.BackgroundTransparency = 0.1
@@ -119,9 +127,18 @@ local function showNotice(message: any)
 end
 
 local function updatePitchStatus()
-    local ready = Workspace:GetAttribute("PitchReady") == true
-    stadiumLabel.Text = ready and "STADIUM READY  •  PITCH, GOALS, SPAWNS AND STANDS CREATED" or "GENERATING STADIUM..."
-    stadiumLabel.TextColor3 = ready and COLORS.Green or COLORS.Muted
+    local pitchReady = Workspace:GetAttribute("PitchReady") == true
+    local ballReady = Workspace:GetAttribute("BallReady") == true
+    if pitchReady and ballReady then
+        stadiumLabel.Text = "STADIUM AND FOOTBALL READY  •  PASS Q  /  SHOOT E  /  LOB F"
+        stadiumLabel.TextColor3 = COLORS.Green
+    elseif pitchReady then
+        stadiumLabel.Text = "PITCH READY  •  CREATING FOOTBALL..."
+        stadiumLabel.TextColor3 = COLORS.Muted
+    else
+        stadiumLabel.Text = "GENERATING STADIUM..."
+        stadiumLabel.TextColor3 = COLORS.Muted
+    end
 end
 
 local function updateTeam()
@@ -139,12 +156,15 @@ end
 
 stateEvent.OnClientEvent:Connect(function(state: any)
     if type(state) ~= "table" then return end
-    phaseLabel.Text = string.upper(tostring(state.phase or "LOBBY"))
+    phaseLabel.Text = string.upper(tostring(state.phase or "PRACTICE"))
+    redScoreLabel.Text = "RED  " .. tostring(state.redScore or 0)
+    blueScoreLabel.Text = tostring(state.blueScore or 0) .. "  BLUE"
 end)
 noticeEvent.OnClientEvent:Connect(showNotice)
 events.ProfileUpdate.OnClientEvent:Connect(updateProfile)
 player:GetAttributeChangedSignal("Team"):Connect(updateTeam)
 Workspace:GetAttributeChangedSignal("PitchReady"):Connect(updatePitchStatus)
+Workspace:GetAttributeChangedSignal("BallReady"):Connect(updatePitchStatus)
 player:GetPropertyChangedSignal("Team"):Connect(updateTeam)
 updateTeam()
 updatePitchStatus()
