@@ -9,6 +9,10 @@ A multiplayer Roblox survival horror prototype built with Luau and Rojo. The cur
 - Every fifth hunt is a Blood Moon: crimson fog, an extra Yeti, and increased Yeti damage.
 - The server autosaves player profiles periodically while they play.
 - The camp workbench lets the team build one shared shelter from gathered wood and stone.
+- Explore the forest to search eight supply caches; each player can claim each cache once per day.
+- Sprint with Shift on PC or the on-screen sprint control, using server-managed stamina.
+- Spend coins at the camp medic to restore health between hunts.
+- Player profile writes use UpdateAsync, following Roblox Creator Hub data-store guidance.
 - Earn coins for surviving a day and defeating a Yeti.
 - Persistent player coins, best day, and 100-day victories via DataStore.
 - Halloween atmosphere: fog, frosted dead pines, glowing pumpkins, icy shards, and a warm campfire.
