@@ -87,23 +87,23 @@ local function buildWorld()
 	if baseplate and baseplate:IsA("BasePart") then baseplate:Destroy() end
 	Lighting.GlobalShadows = true
 	Lighting.ShadowSoftness = 0.32
-	Lighting.ClockTime = 0
-	Lighting.Brightness = 1.1
-	Lighting.Ambient = Color3.fromRGB(80, 92, 125)
-	Lighting.OutdoorAmbient = Color3.fromRGB(43, 51, 78)
-	Lighting.FogColor = Color3.fromRGB(120, 145, 175)
-	Lighting.FogStart = 80
-	Lighting.FogEnd = 260
-	Lighting.EnvironmentDiffuseScale = 0.25
-	Lighting.EnvironmentSpecularScale = 0.3
-	Lighting.ExposureCompensation = -0.15
+	Lighting.ClockTime = 1.1
+	Lighting.Brightness = 1.35
+	Lighting.Ambient = Color3.fromRGB(74, 91, 72)
+	Lighting.OutdoorAmbient = Color3.fromRGB(38, 57, 42)
+	Lighting.FogColor = Color3.fromRGB(53, 74, 57)
+	Lighting.FogStart = 55
+	Lighting.FogEnd = 220
+	Lighting.EnvironmentDiffuseScale = 0.35
+	Lighting.EnvironmentSpecularScale = 0.25
+	Lighting.ExposureCompensation = -0.08
 
 	-- Ground is the only large surface. Props sit above it rather than sharing a coplanar face.
-	local ground = makePart(mapFolder, "FrozenGround", Vector3.new(300, 4, 300), CFrame.new(0, -2, 0), Color3.fromRGB(170, 198, 215), Enum.Material.Snow)
+	local ground = makePart(mapFolder, "FrozenGround", Vector3.new(300, 4, 300), CFrame.new(0, -2, 0), Color3.fromRGB(58, 88, 55), Enum.Material.Grass)
 	ground.TopSurface = Enum.SurfaceType.Smooth
 	ground.CastShadow = false
-	makePart(mapFolder, "MainTrail", Vector3.new(20, 0.3, 190), CFrame.new(0, 0.2, 0), Color3.fromRGB(90, 112, 142), Enum.Material.Slate)
-	makePart(mapFolder, "CampPlatform", Vector3.new(52, 1, 40), CFrame.new(0, 0.4, 66), Color3.fromRGB(65, 77, 94), Enum.Material.Slate)
+	makePart(mapFolder, "MainTrail", Vector3.new(20, 0.3, 190), CFrame.new(0, 0.2, 0), Color3.fromRGB(94, 74, 52), Enum.Material.Ground)
+	makePart(mapFolder, "CampPlatform", Vector3.new(52, 1, 40), CFrame.new(0, 0.4, 66), Color3.fromRGB(91, 78, 57), Enum.Material.WoodPlanks)
 	lobbySpawn = Instance.new("SpawnLocation")
 	lobbySpawn.Name = "CampSpawn"
 	lobbySpawn.Size = Vector3.new(8, 1, 8)
@@ -167,11 +167,11 @@ local function buildWorld()
 		local z = rng:NextInteger(-130, 130)
 		if math.abs(x) > 17 or z < 38 then
 			local height = rng:NextInteger(10, 25)
-			local trunk = makePart(mapFolder, "DeadPineTrunk", Vector3.new(2, height, 2), CFrame.new(x, height/2, z), Color3.fromRGB(45, 48, 60), Enum.Material.Wood)
+			local trunk = makePart(mapFolder, "DeadPineTrunk", Vector3.new(2, height, 2), CFrame.new(x, height/2, z), Color3.fromRGB(73, 54, 39), Enum.Material.Wood)
 			trunk.Shape = Enum.PartType.Cylinder
 			trunk.CanCollide = false
 			trunk.CastShadow = true
-			local crown = makePart(mapFolder, "FrostedPine", Vector3.new(rng:NextInteger(8, 14), height, rng:NextInteger(8, 14)), CFrame.new(x, height * 0.72, z), Color3.fromRGB(45, 70, 91), Enum.Material.Slate)
+			local crown = makePart(mapFolder, "FrostedPine", Vector3.new(rng:NextInteger(8, 14), height, rng:NextInteger(8, 14)), CFrame.new(x, height * 0.72, z), Color3.fromRGB(35, 79, 47), Enum.Material.Grass)
 			crown.Shape = Enum.PartType.Ball
 			crown.CanCollide = false
 			crown.CastShadow = true
@@ -210,7 +210,7 @@ local function buildWorld()
 		local x = rng:NextInteger(-118, 118)
 		local z = rng:NextInteger(-112, 28)
 		if math.abs(x) > 20 then
-			local rock = makePart(mapFolder, "HarvestableFrostRock", Vector3.new(4, 3, 4), CFrame.new(x, 1.1, z), Color3.fromRGB(103, 128, 151), Enum.Material.Rock)
+			local rock = makePart(mapFolder, "HarvestableFrostRock", Vector3.new(4, 3, 4), CFrame.new(x, 1.1, z), Color3.fromRGB(91, 103, 73), Enum.Material.Rock)
 			rock.Shape = Enum.PartType.Ball
 			local prompt = Instance.new("ProximityPrompt")
 			prompt.ActionText = "Mine Stone"
@@ -275,7 +275,7 @@ local function buildWorld()
 	for i = 1, 7 do
 		local x = (i % 2 == 0) and -34 or 34
 		local z = -105 + i * 23
-		makePart(mapFolder, "IceShard", Vector3.new(5, rng:NextInteger(7, 15), 5), CFrame.new(x, 5, z) * CFrame.Angles(0, 0, math.rad(rng:NextInteger(-12, 12))), Color3.fromRGB(116, 202, 230), Enum.Material.Glass)
+		makePart(mapFolder, "IceShard", Vector3.new(5, rng:NextInteger(7, 15), 5), CFrame.new(x, 5, z) * CFrame.Angles(0, 0, math.rad(rng:NextInteger(-12, 12))), Color3.fromRGB(97, 126, 80), Enum.Material.Rock)
 	end
 
 	yetisFolder = Instance.new("Folder")
