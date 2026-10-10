@@ -91,7 +91,7 @@ function TeamService.Init()
         local maid = playerMaids[player]
         if maid then maid:Destroy(); playerMaids[player] = nil end
     end)
-    for _, player in ipairs(Players:GetPlayers()) do task.spawn(setupPlayer, player) end
+    for _, player in ipairs(Players:GetPlayers()) do setupPlayer(player) end
     print("[TeamService] Balanced Red and Blue teams are ready.")
 end
 
