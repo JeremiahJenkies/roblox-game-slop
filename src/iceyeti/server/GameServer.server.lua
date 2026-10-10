@@ -81,10 +81,6 @@ local function buildWorld()
 	-- Remove the default Baseplate: its top face overlaps the generated ground and can shimmer (z-fighting).
 	local baseplate = Workspace:FindFirstChild("Baseplate")
 	if baseplate and baseplate:IsA("BasePart") then baseplate:Destroy() end
-	Workspace.StreamingEnabled = true
-	Workspace.StreamingMinRadius = 64
-	Workspace.StreamingTargetRadius = 192
-	Lighting.Technology = Enum.Technology.Future
 	Lighting.GlobalShadows = true
 	Lighting.ShadowSoftness = 0.32
 	Lighting.ClockTime = 0
