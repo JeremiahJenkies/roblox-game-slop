@@ -1,25 +1,25 @@
 {
-  "name": "roblox-game-slop",
+  "name": "Survive Ice Yetis For 100 Days",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
       "Shared": {
-        "$path": "src/shared"
+        "$path": "src/iceyeti/shared"
       }
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "Server": {
-        "$path": "src/server"
+      "IceYetiServer": {
+        "$path": "src/iceyeti/server"
       }
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "StarterHub": {
-          "$path": "src/client/StarterHub.client.lua"
+        "IceYetiClient": {
+          "$path": "src/iceyeti/client/Client.client.lua"
         }
       }
     }
