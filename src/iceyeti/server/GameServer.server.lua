@@ -78,6 +78,15 @@ local function buildWorld()
 	mapFolder.Name = "IceYetiWorld"
 	mapFolder.Parent = Workspace
 
+	-- Remove the default Baseplate: its top face overlaps the generated ground and can shimmer (z-fighting).
+	local baseplate = Workspace:FindFirstChild("Baseplate")
+	if baseplate and baseplate:IsA("BasePart") then baseplate:Destroy() end
+	Workspace.StreamingEnabled = true
+	Workspace.StreamingMinRadius = 64
+	Workspace.StreamingTargetRadius = 192
+	Lighting.Technology = Enum.Technology.Future
+	Lighting.GlobalShadows = true
+	Lighting.ShadowSoftness = 0.32
 	Lighting.ClockTime = 0
 	Lighting.Brightness = 1.1
 	Lighting.Ambient = Color3.fromRGB(80, 92, 125)
@@ -86,9 +95,13 @@ local function buildWorld()
 	Lighting.FogStart = 80
 	Lighting.FogEnd = 260
 	Lighting.EnvironmentDiffuseScale = 0.25
-	Lighting.EnvironmentSpecularScale = 0.4
+	Lighting.EnvironmentSpecularScale = 0.3
+	Lighting.ExposureCompensation = -0.15
 
-	makePart(mapFolder, "FrozenGround", Vector3.new(300, 4, 300), CFrame.new(0, -2, 0), Color3.fromRGB(170, 198, 215), Enum.Material.Ice)
+	-- Ground is the only large surface. Props sit above it rather than sharing a coplanar face.
+	local ground = makePart(mapFolder, "FrozenGround", Vector3.new(300, 4, 300), CFrame.new(0, -2, 0), Color3.fromRGB(170, 198, 215), Enum.Material.Snow)
+	ground.TopSurface = Enum.SurfaceType.Smooth
+	ground.CastShadow = false
 	makePart(mapFolder, "MainTrail", Vector3.new(20, 0.3, 190), CFrame.new(0, 0.2, 0), Color3.fromRGB(90, 112, 142), Enum.Material.Slate)
 	makePart(mapFolder, "CampPlatform", Vector3.new(52, 1, 40), CFrame.new(0, 0.4, 66), Color3.fromRGB(65, 77, 94), Enum.Material.Slate)
 	lobbySpawn = Instance.new("SpawnLocation")
@@ -131,9 +144,12 @@ local function buildWorld()
 			local height = rng:NextInteger(10, 25)
 			local trunk = makePart(mapFolder, "DeadPineTrunk", Vector3.new(2, height, 2), CFrame.new(x, height/2, z), Color3.fromRGB(45, 48, 60), Enum.Material.Wood)
 			trunk.Shape = Enum.PartType.Cylinder
-			local crown = makePart(mapFolder, "FrostedPine", Vector3.new(rng:NextInteger(8, 14), height, rng:NextInteger(8, 14)), CFrame.new(x, height * 0.72, z), Color3.fromRGB(58, 82, 105), Enum.Material.Slate)
+			trunk.CanCollide = false
+			trunk.CastShadow = true
+			local crown = makePart(mapFolder, "FrostedPine", Vector3.new(rng:NextInteger(8, 14), height, rng:NextInteger(8, 14)), CFrame.new(x, height * 0.72, z), Color3.fromRGB(45, 70, 91), Enum.Material.Slate)
 			crown.Shape = Enum.PartType.Ball
 			crown.CanCollide = false
+			crown.CastShadow = true
 			if i % 4 == 0 then
 				local pumpkin = makePart(mapFolder, "GlowingPumpkin", Vector3.new(2.8, 2.4, 2.8), CFrame.new(x + 3, 1.4, z + 2), Color3.fromRGB(255, 111, 35), Enum.Material.Neon)
 				pumpkin.Shape = Enum.PartType.Ball
@@ -219,9 +235,30 @@ local function spawnYeti(day, spawnPosition)
 	eye1.CanCollide = false
 	local eye2 = makePart(model, "EyeRight", Vector3.new(0.45, 0.45, 0.2), head.CFrame * CFrame.new(0.8, 0.2, -1.7), Color3.fromRGB(255, 70, 50), Enum.Material.Neon, true)
 	eye2.CanCollide = false
+
+	-- A more readable, layered low-poly creature silhouette; all detail pieces move with the root.
+	local leftArm = makePart(model, "HeavyLeftArm", Vector3.new(2.2, 5.2, 2.5), root.CFrame * CFrame.new(-3.65, 0.25, -0.1) * CFrame.Angles(0, 0, math.rad(-12)), Color3.fromRGB(185, 218, 231), Enum.Material.Snow, true)
+	local rightArm = makePart(model, "HeavyRightArm", Vector3.new(2.2, 5.2, 2.5), root.CFrame * CFrame.new(3.65, 0.25, -0.1) * CFrame.Angles(0, 0, math.rad(12)), Color3.fromRGB(185, 218, 231), Enum.Material.Snow, true)
+	local leftHand = makePart(model, "LeftIceClaws", Vector3.new(1.8, 1.3, 1.8), root.CFrame * CFrame.new(-3.8, -2.6, -0.2), Color3.fromRGB(110, 179, 202), Enum.Material.Ice, true)
+	local rightHand = makePart(model, "RightIceClaws", Vector3.new(1.8, 1.3, 1.8), root.CFrame * CFrame.new(3.8, -2.6, -0.2), Color3.fromRGB(110, 179, 202), Enum.Material.Ice, true)
+	local jaw = makePart(model, "FrostJaw", Vector3.new(2.4, 0.65, 1.1), head.CFrame * CFrame.new(0, -1.05, -1.35), Color3.fromRGB(79, 112, 135), Enum.Material.Slate, true)
+	local hornL = makePart(model, "IceHornLeft", Vector3.new(0.75, 2.2, 0.75), head.CFrame * CFrame.new(-1.25, 1.75, 0.1) * CFrame.Angles(0, 0, math.rad(-24)), Color3.fromRGB(123, 208, 231), Enum.Material.Glass, true)
+	local hornR = makePart(model, "IceHornRight", Vector3.new(0.75, 2.2, 0.75), head.CFrame * CFrame.new(1.25, 1.75, 0.1) * CFrame.Angles(0, 0, math.rad(24)), Color3.fromRGB(123, 208, 231), Enum.Material.Glass, true)
+	for _, detail in ipairs({leftArm, rightArm, leftHand, rightHand, jaw, hornL, hornR}) do
+		detail.CanCollide = false
+		detail.CastShadow = true
+	end
+	leftArm.Shape = Enum.PartType.Ball
+	rightArm.Shape = Enum.PartType.Ball
+	leftHand.Shape = Enum.PartType.Ball
+	rightHand.Shape = Enum.PartType.Ball
+	jaw.Shape = Enum.PartType.Block
+	hornL.Shape = Enum.PartType.Cylinder
+	hornR.Shape = Enum.PartType.Cylinder
+
 	local weldRoot = Instance.new("WeldConstraint")
 	weldRoot.Part0 = root; weldRoot.Part1 = body; weldRoot.Parent = root
-	for _, part in ipairs({head, eye1, eye2}) do
+	for _, part in ipairs({head, eye1, eye2, leftArm, rightArm, leftHand, rightHand, jaw, hornL, hornR}) do
 		local weld = Instance.new("WeldConstraint")
 		weld.Part0 = body; weld.Part1 = part; weld.Parent = body
 	end
@@ -264,7 +301,7 @@ local function spawnYeti(day, spawnPosition)
 					local offset = targetRoot.Position - root.Position
 					local flatOffset = Vector3.new(offset.X, 0, offset.Z)
 					if flatOffset.Magnitude > 2 then
-						local step = math.min(flatOffset.Magnitude, humanoid.WalkSpeed * 0.35)
+						local step = math.min(flatOffset.Magnitude, humanoid.WalkSpeed * 0.28)
 						model:PivotTo(model:GetPivot() + flatOffset.Unit * step)
 					end
 					if dist <= Config.AttackRange and os.clock() - lastAttack >= Config.AttackCooldown then
@@ -276,7 +313,7 @@ local function spawnYeti(day, spawnPosition)
 					end
 				end
 			end
-			task.wait(0.35)
+			task.wait(0.4)
 		end
 	end)
 	return model
