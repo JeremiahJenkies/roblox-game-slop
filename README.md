@@ -8,11 +8,12 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 - Match lifecycle: intermission, kick-off, two halves, half-time, full-time, score updates, team-side switching and automatic rematches; configurable throw-in, corner and goal-kick restarts.
 - Server-authoritative sprint and stamina drain/regeneration; clients send intent rather than setting their own movement speed.
 - Signature 1.35x bobble heads with movement-reactive wobble on every player.
-- Server-controlled soft dribble possession that guides the ball ahead of a nearby moving player without anchoring or welding it.
+- Close-control dribbling: when a player reaches the ball, a server-controlled AlignPosition keeps the unanchored ball at their feet and ahead of their facing direction; kicking releases possession.
+- Server-validated tackle steals: press C or use the TACKLE button to challenge a nearby opposing ball carrier, with range, facing, team and cooldown checks.
 - A mouse/touch kick-power slider (20–100%) shared by shots, passes and lobs; power is revalidated on the server.
 - Goal scoring adapts to the teams switching ends at half-time and rejects stoppage-time crossings without leaving the goal lock stuck.
 - Cosmetic locker with earnable kits, ball trails and goal effects. Purchases/equipping are validated by the server and never affect competitive stats.
-- Practice scoreboard and profile HUD; keyboard controls Q=Pass, E=Shoot, F=Lob, Shift=toggle sprint, plus large touch-screen Pass/Shoot/Lob/Sprint buttons. Standard Roblox movement controls remain enabled.
+- Practice scoreboard and profile HUD; keyboard controls Q=Pass, E=Shoot, F=Lob, C=Tackle, Shift=toggle sprint, plus large touch-screen Pass/Shoot/Lob/Sprint buttons. Standard Roblox movement controls remain enabled.
 - Red/Blue teams, balanced assignment, side-based respawns and simple team-coloured player appearance.
 - DataService profile template and merged UpdateAsync writes; existing DataStore name `IceYetiSurvival_v1` and `player_<UserId>` keys are preserved. Legacy fields are not intentionally dropped.
 - Stale `IceYetiServer`/`SoccerServer` folders, old player LocalScripts and legacy HUDs are removed during startup.
