@@ -15,7 +15,9 @@ A multiplayer Roblox survival horror prototype built with Luau and Rojo. The cur
 - Player profile writes use UpdateAsync, following Roblox Creator Hub data-store guidance.
 - Earn coins for surviving a day and defeating a Yeti.
 - Persistent player coins, best day, and 100-day victories via DataStore.
-- Halloween atmosphere: fog, frosted dead pines, glowing pumpkins, icy shards, and a warm campfire.
+- Cinematic moonlit lighting, volumetric-style atmosphere, stars, cloud cover, restrained bloom, colour grading and distant fog.
+- Ambient snowfall, campfire embers and smoke, glowing trail lanterns, glassy ice shards, an illuminated watchtower, and an abandoned cabin with searchable rewards.
+- Visual effects are intentionally restrained and use a single large snowfall emitter volume to help protect performance.
 
 ## Project structure
 - `src/iceyeti/shared/GameConfig.lua` — shared game tuning.
