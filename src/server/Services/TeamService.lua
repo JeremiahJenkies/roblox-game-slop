@@ -3,7 +3,9 @@ local Players = game:GetService("Players")
 local Teams = game:GetService("Teams")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlayerConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("PlayerConfig"))
+local Maid = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Util"):WaitForChild("Maid"))
 local TeamService = {}
+local playerMaids: {[Player]: any} = {}
 local teamA: Team? = nil
 local teamB: Team? = nil
 
@@ -65,6 +67,9 @@ function TeamService.PlaceCharacter(player: Player, character: Model)
 end
 
 local function setupPlayer(player: Player)
+    if playerMaids[player] then playerMaids[player]:Destroy() end
+    local maid = Maid.new()
+    playerMaids[player] = maid
     local currentTeam = player.Team
     if currentTeam ~= teamA and currentTeam ~= teamB then
         TeamService.Assign(player)
@@ -72,9 +77,9 @@ local function setupPlayer(player: Player)
         player:SetAttribute("Team", currentTeam.Name)
         player.Neutral = false
     end
-    player.CharacterAdded:Connect(function(character)
+    maid:GiveTask(player.CharacterAdded:Connect(function(character)
         task.spawn(TeamService.PlaceCharacter, player, character)
-    end)
+    end))
     if player.Character then task.spawn(TeamService.PlaceCharacter, player, player.Character) end
 end
 
@@ -82,6 +87,10 @@ function TeamService.Init()
     teamA = getOrCreateTeam("Red", BrickColor.new("Bright red"))
     teamB = getOrCreateTeam("Blue", BrickColor.new("Bright blue"))
     Players.PlayerAdded:Connect(setupPlayer)
+    Players.PlayerRemoving:Connect(function(player)
+        local maid = playerMaids[player]
+        if maid then maid:Destroy(); playerMaids[player] = nil end
+    end)
     for _, player in ipairs(Players:GetPlayers()) do task.spawn(setupPlayer, player) end
     print("[TeamService] Balanced Red and Blue teams are ready.")
 end
