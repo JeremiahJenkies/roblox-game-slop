@@ -18,5 +18,12 @@ Config.RewardPerDay = 2
 Config.DataStoreName = "IceYetiSurvival_v1"
 Config.AutoSaveSeconds = 60
 Config.BloodMoonEveryDays = 5
+Config.SprintSpeed = 23
+Config.WalkSpeed = 16
+Config.MaxStamina = 100
+Config.StaminaDrainPerQuarterSecond = 2.5
+Config.StaminaRegenPerQuarterSecond = 1.5
+Config.CacheCoins = 12
+Config.MedicCost = 20
 
 return Config
