@@ -151,7 +151,7 @@ RunService.RenderStepped:Connect(function()
     local height = math.max(0, ballObject.Position.Y - result.Position.Y)
     local diameter = math.clamp(BallConfig.Radius * 2 + height * 0.08, BallConfig.Radius * 2, BallConfig.Radius * 3.8)
     shadow.Size = Vector3.new(diameter, 0.035, diameter)
-    shadow.CFrame = CFrame.new(result.Position + Vector3.new(0, 0.025, 0)) * CFrame.Angles(0, 0, math.rad(90))
+    shadow.CFrame = CFrame.new(result.Position + Vector3.new(0, 0.025, 0))
     shadow.Transparency = math.clamp(0.5 + height * 0.018, 0.5, 0.86)
 end)
 
