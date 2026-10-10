@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-10 — Invisible boundary barriers and out-of-bounds restarts
+- Moved invisible side and end barriers closer to the playable field, while leaving room for server out-of-bounds detection to trigger first.
+- Preserved throw-ins on the sidelines and corner/goal-kick decisions beyond the goal lines, based on the last-touching team.
+- Kept the goals and goal nets open for valid scoring before the end-line safety barriers.
+- Roblox Studio physics and match-flow testing is still required.
+
 ## 2026-10-10 — Bobble heads, close control and shot power
 - Enlarged every player's head to 135% and added a client-side bobble animation that varies with movement.
 - Added server-controlled soft possession: when a moving player is close to the ball, the server nudges the ball into a controllable position ahead of their feet. It is not welded or anchored, so kicks and physics remain responsive.
