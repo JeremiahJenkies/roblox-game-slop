@@ -19,6 +19,7 @@ local serviceNames = {
     "DataService",
     "PitchService",
     "TeamService",
+    "PlayerService",
     "MatchService",
     "BallService",
 }
