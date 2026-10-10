@@ -3,6 +3,7 @@
 All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
 ## 2026-10-10 — Playable soccer practice build
+- Made the goal side and rear nets collidable so the ball is contained instead of passing through the netting.
 - Added server-owned football, panel visuals, validated Pass/Shoot/Lob/Clearance requests, kick range/cooldown checks, speed cap, anti-tunnelling, stuck-ball recovery, moving-player dribble nudges and goal-plane scoring.
 - Added practice score registration and server-side goal/assist XP awards.
 - Mapped the client input controller with Q/E/F actions, on-screen touch buttons and local ball shadow.
