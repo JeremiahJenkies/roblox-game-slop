@@ -169,9 +169,9 @@ function DataService.Init()
         canSave[player] = nil
     end)
     if profileRequest then
-        profileRequest.OnServerEvent:Connect(function(player)
-            -- Request contains no profile data and cannot edit values.
-            sendProfile(player)
+        profileRequest.OnServerEvent:Connect(function(player, action)
+            -- Only permit a profile snapshot request; clients cannot send profile values.
+            if action == "RequestProfile" then sendProfile(player) end
         end)
     end
     for _, player in ipairs(Players:GetPlayers()) do task.spawn(DataService.LoadProfile, player) end
