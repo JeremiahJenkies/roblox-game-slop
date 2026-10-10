@@ -1,317 +1,65 @@
--- Halloween survival HUD and client-side visual polish. Gameplay decisions stay on the server.
+-- PITCH soccer HUD and kick controls. The server validates every kick and owns match scoring.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
-
+local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
-local remotes = ReplicatedStorage:WaitForChild("IceYetiRemotes")
+local remotes = ReplicatedStorage:WaitForChild("SoccerRemotes")
 local stateEvent = remotes:WaitForChild("StateUpdate")
 local noticeEvent = remotes:WaitForChild("Notice")
-local flareEvent = remotes:WaitForChild("ThrowFlare")
-local sprintEvent = remotes:WaitForChild("Sprint")
-local UserInputService = game:GetService("UserInputService")
-
-local gui = Instance.new("ScreenGui")
-gui.Name = "IceYetiHUD"
-gui.ResetOnSpawn = false
-gui.DisplayOrder = 20
-gui.Parent = player:WaitForChild("PlayerGui")
-
-local function rounded(parent, radius)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, radius)
-	corner.Parent = parent
+local kickEvent = remotes:WaitForChild("KickBall")
+local gui = Instance.new("ScreenGui"); gui.Name = "SoccerHUD"; gui.ResetOnSpawn = false; gui.DisplayOrder = 20; gui.Parent = player:WaitForChild("PlayerGui")
+local function rounded(obj, radius) local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, radius); c.Parent = obj end
+local function label(parent, name, text, size, position, fontSize, color)
+ local l = Instance.new("TextLabel"); l.Name = name; l.Text = text; l.Size = size; l.Position = position; l.BackgroundTransparency = 1
+ l.Font = Enum.Font.GothamBold; l.TextSize = fontSize; l.TextColor3 = color; l.TextXAlignment = Enum.TextXAlignment.Center; l.Parent = parent; return l
 end
-
-local function makeLabel(parent, name, text, size, position, font, color, textSize)
-	local label = Instance.new("TextLabel")
-	label.Name = name
-	label.BackgroundTransparency = 1
-	label.Text = text
-	label.Size = size
-	label.Position = position
-	label.Font = font or Enum.Font.Gotham
-	label.TextColor3 = color or Color3.fromRGB(245, 242, 238)
-	label.TextSize = textSize or 14
-	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = parent
-	return label
+local navy = Color3.fromRGB(14, 23, 32); local white = Color3.fromRGB(244, 247, 244); local red = Color3.fromRGB(238, 83, 85); local blue = Color3.fromRGB(83, 154, 255)
+local top = Instance.new("Frame"); top.Name = "Scoreboard"; top.AnchorPoint = Vector2.new(0.5,0); top.Position = UDim2.new(0.5,0,0,18); top.Size = UDim2.new(0.78,0,0,104); top.BackgroundColor3 = navy; top.BackgroundTransparency = 0.08; top.Parent = gui; rounded(top,16)
+local outline = Instance.new("UIStroke"); outline.Color = Color3.fromRGB(126, 153, 170); outline.Transparency = 0.45; outline.Parent = top
+label(top,"GameTitle","P I T C H   /   C O M P E T I T I V E   S O C C E R",UDim2.new(1,0,0,22),UDim2.fromOffset(0,8),12,Color3.fromRGB(183,202,215))
+local redScore = label(top,"RedScore","RED  0",UDim2.new(0.35,0,0,38),UDim2.new(0.03,0,0,32),21,red)
+local clock = label(top,"Clock","KICKOFF",UDim2.new(0.24,0,0,34),UDim2.new(0.38,0,0,34),17,white)
+local blueScore = label(top,"BlueScore","0  BLUE",UDim2.new(0.35,0,0,38),UDim2.new(0.62,0,0,32),21,blue)
+local phaseLabel = label(top,"Phase","GET READY",UDim2.new(1,0,0,18),UDim2.new(0,0,0,78),10,Color3.fromRGB(185,201,211))
+local teamCard = Instance.new("Frame"); teamCard.Name = "PlayerCard"; teamCard.Position = UDim2.new(0,18,0,136); teamCard.Size = UDim2.fromOffset(190,76); teamCard.BackgroundColor3 = navy; teamCard.BackgroundTransparency = 0.1; teamCard.Parent = gui; rounded(teamCard,12)
+local teamLabel = label(teamCard,"Team","TEAM: ASSIGNING",UDim2.new(1,-12,0,26),UDim2.fromOffset(6,7),14,white)
+local statsLabel = label(teamCard,"Stats","W 0   G 0   MATCHES 0",UDim2.new(1,-12,0,22),UDim2.fromOffset(6,39),10,Color3.fromRGB(192,211,221))
+local kickButton = Instance.new("TextButton"); kickButton.Name = "KickButton"; kickButton.AnchorPoint = Vector2.new(1,1); kickButton.Position = UDim2.new(1,-24,1,-34); kickButton.Size = UDim2.fromOffset(164,68); kickButton.BackgroundColor3 = Color3.fromRGB(245,247,242); kickButton.Text = "KICK  [E]"; kickButton.TextColor3 = Color3.fromRGB(20,31,40); kickButton.Font = Enum.Font.GothamBlack; kickButton.TextSize = 18; kickButton.Parent = gui; rounded(kickButton,18)
+local kickStroke = Instance.new("UIStroke"); kickStroke.Color = Color3.fromRGB(173,204,216); kickStroke.Thickness = 2; kickStroke.Parent = kickButton
+local notice = Instance.new("TextLabel"); notice.Name = "Notice"; notice.AnchorPoint = Vector2.new(0.5,0); notice.Position = UDim2.new(0.5,0,0,136); notice.Size = UDim2.new(0.7,0,0,42); notice.BackgroundColor3 = navy; notice.BackgroundTransparency = 1; notice.TextTransparency = 1; notice.TextColor3 = white; notice.TextWrapped = true; notice.Font = Enum.Font.GothamBold; notice.TextSize = 15; notice.Parent = gui; rounded(notice,10)
+local noticeId = 0
+local function showNotice(message)
+ noticeId += 1; local id = noticeId; notice.Text = tostring(message); notice.BackgroundTransparency = 0.12; notice.TextTransparency = 0
+ task.delay(2.8,function() if id == noticeId and notice.Parent then notice.BackgroundTransparency = 1; notice.TextTransparency = 1 end end)
 end
-
-local showNotice
-
-local top = Instance.new("Frame")
-top.Name = "TopBar"
-top.AnchorPoint = Vector2.new(0.5, 0)
-top.Position = UDim2.new(0.5, 0, 0, 18)
-top.Size = UDim2.new(0.9, 0, 0, 94)
-top.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
-top.BackgroundTransparency = 0.08
-top.Parent = gui
-rounded(top, 16)
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(225, 143, 58)
-stroke.Transparency = 0.25
-stroke.Parent = top
-
-makeLabel(top, "GameTitle", "SURVIVE ICE YETIS", UDim2.new(1, -24, 0, 26), UDim2.fromOffset(16, 10), Enum.Font.GothamBlack, Color3.fromRGB(238, 169, 82), 18)
-local dayLabel = makeLabel(top, "Day", "DAY 0 / 100", UDim2.new(0.48, 0, 0, 25), UDim2.fromOffset(16, 45), Enum.Font.GothamBold, Color3.fromRGB(245, 245, 250), 15)
-local phaseLabel = makeLabel(top, "Phase", "PREPARING", UDim2.new(0.5, -16, 0, 25), UDim2.new(0.5, 0, 0, 45), Enum.Font.GothamBold, Color3.fromRGB(130, 218, 255), 14)
-phaseLabel.TextXAlignment = Enum.TextXAlignment.Right
-local eventLabel = makeLabel(top, "Event", "FOREST WATCH", UDim2.new(1, -24, 0, 16), UDim2.fromOffset(16, 69), Enum.Font.GothamBold, Color3.fromRGB(178, 203, 157), 10)
-eventLabel.TextXAlignment = Enum.TextXAlignment.Left
-
-
-local sprintButton = Instance.new("TextButton")
-sprintButton.Name = "SprintButton"
-sprintButton.AnchorPoint = Vector2.new(1, 0)
-sprintButton.Position = UDim2.new(1, -18, 0, 176)
-sprintButton.Size = UDim2.fromOffset(170, 42)
-sprintButton.BackgroundColor3 = Color3.fromRGB(52, 84, 67)
-sprintButton.Text = "⇧  SPRINT"
-sprintButton.TextColor3 = Color3.fromRGB(234, 255, 235)
-sprintButton.Font = Enum.Font.GothamBlack
-sprintButton.TextSize = 13
-sprintButton.Parent = gui
-rounded(sprintButton, 12)
-
-local sprintHeld = false
-local function setSprinting(enabled)
-	if sprintHeld == enabled then return end
-	sprintHeld = enabled
-	sprintEvent:FireServer(enabled)
-	sprintButton.Text = enabled and "SPRINTING..." or "⇧  SPRINT"
-	sprintButton.BackgroundColor3 = enabled and Color3.fromRGB(89, 112, 67) or Color3.fromRGB(52, 84, 67)
+local function kick()
+ local character = player.Character; local root = character and character:FindFirstChild("HumanoidRootPart"); local ball = workspace:FindFirstChild("SoccerStadium") and workspace.SoccerStadium:FindFirstChild("MatchBall")
+ if not root or not ball then showNotice("Waiting for the match ball..."); return end
+ if (root.Position - ball.Position).Magnitude > 13 then showNotice("Get closer to the ball!"); return end
+ local camera = workspace.CurrentCamera; local direction
+ if UserInputService.MouseEnabled then
+  local mouse = player:GetMouse(); local target = mouse.Hit.Position; direction = Vector3.new(target.X - ball.Position.X, math.clamp(target.Y - ball.Position.Y,0,10), target.Z - ball.Position.Z)
+ else direction = camera and camera.CFrame.LookVector or root.CFrame.LookVector end
+ if direction.Magnitude > 0 then direction = direction.Unit end
+ kickEvent:FireServer(direction)
 end
-sprintButton.Activated:Connect(function()
-	setSprinting(not sprintHeld)
-end)
+kickButton.Activated:Connect(kick)
 UserInputService.InputBegan:Connect(function(input, processed)
-	if processed then return end
-	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
-		setSprinting(true)
-	end
+ if processed then return end
+ if input.KeyCode == Enum.KeyCode.E or input.KeyCode == Enum.KeyCode.ButtonR2 then kick() end
 end)
-UserInputService.InputEnded:Connect(function(input)
-	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
-		setSprinting(false)
-	end
-end)
-
-local flareButton = Instance.new("TextButton")
-flareButton.Name = "ThrowFlare"
-flareButton.AnchorPoint = Vector2.new(1, 0)
-flareButton.Position = UDim2.new(1, -18, 0, 120)
-flareButton.Size = UDim2.fromOffset(170, 48)
-flareButton.BackgroundColor3 = Color3.fromRGB(132, 65, 35)
-flareButton.Text = "✦  THROW FLARE"
-flareButton.TextColor3 = Color3.fromRGB(255, 242, 225)
-flareButton.Font = Enum.Font.GothamBlack
-flareButton.TextSize = 13
-flareButton.Parent = gui
-rounded(flareButton, 12)
-local flareStroke = Instance.new("UIStroke")
-flareStroke.Color = Color3.fromRGB(228, 157, 78)
-flareStroke.Transparency = 0.2
-flareStroke.Parent = flareButton
-
-local function nearestYeti()
-	local character = player.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart")
-	local world = workspace:FindFirstChild("IceYetiWorld")
-	local folder = world and world:FindFirstChild("Yetis")
-	if not root or not folder then return nil end
-	local selected, selectedDistance
-	for _, model in ipairs(folder:GetChildren()) do
-		if model:IsA("Model") and model:GetAttribute("IsIceYeti") then
-			local yetiRoot = model:FindFirstChild("HumanoidRootPart")
-			local humanoid = model:FindFirstChildOfClass("Humanoid")
-			if yetiRoot and humanoid and humanoid.Health > 0 then
-				local distance = (yetiRoot.Position - root.Position).Magnitude
-				if distance <= 90 and (not selectedDistance or distance < selectedDistance) then
-					selected, selectedDistance = model, distance
-				end
-			end
-		end
-	end
-	return selected, selectedDistance
+local function updatePlayerStats()
+ local team = player:GetAttribute("Team") or "ASSIGNING"
+ teamLabel.Text = "TEAM: " .. string.upper(team); teamLabel.TextColor3 = team == "Red" and red or (team == "Blue" and blue or white)
+ statsLabel.Text = "W " .. tostring(player:GetAttribute("Wins") or 0) .. "   G " .. tostring(player:GetAttribute("Goals") or 0) .. "   MATCHES " .. tostring(player:GetAttribute("Matches") or 0)
 end
-
-local flareReady = true
-flareButton.Activated:Connect(function()
-	if not flareReady then return end
-	local target, distance = nearestYeti()
-	if not target then
-		showNotice("No Ice Yeti in flare range. Keep moving!")
-		return
-	end
-	flareReady = false
-	flareEvent:FireServer(target)
-	flareButton.Text = "FLARE THROWN"
-	flareButton.BackgroundColor3 = Color3.fromRGB(70, 73, 61)
-	task.delay(1.1, function()
-		flareReady = true
-		if flareButton.Parent then
-			flareButton.Text = "✦  THROW FLARE"
-			flareButton.BackgroundColor3 = Color3.fromRGB(132, 65, 35)
-		end
-	end)
-end)
-
-local staminaBack = Instance.new("Frame")
-staminaBack.Name = "StaminaBack"
-staminaBack.AnchorPoint = Vector2.new(0, 1)
-staminaBack.Position = UDim2.new(0, 18, 1, -57)
-staminaBack.Size = UDim2.fromOffset(210, 12)
-staminaBack.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
-staminaBack.Parent = gui
-rounded(staminaBack, 6)
-local staminaFill = Instance.new("Frame")
-staminaFill.Name = "Fill"
-staminaFill.Size = UDim2.fromScale(1, 1)
-staminaFill.BackgroundColor3 = Color3.fromRGB(113, 215, 143)
-staminaFill.Parent = staminaBack
-rounded(staminaFill, 6)
-local staminaText = makeLabel(gui, "StaminaLabel", "STAMINA 100%", UDim2.fromOffset(210, 18), UDim2.new(0, 18, 1, -79), Enum.Font.GothamBold, Color3.fromRGB(192, 239, 202), 10)
-
-local stats = Instance.new("Frame")
-stats.Name = "PlayerStats"
-stats.Position = UDim2.new(0, 18, 0, 120)
-stats.Size = UDim2.fromOffset(210, 176)
-stats.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
-stats.BackgroundTransparency = 0.1
-stats.Parent = gui
-rounded(stats, 13)
-local coinsLabel = makeLabel(stats, "Coins", "◈  0 COINS", UDim2.new(1, -20, 0, 24), UDim2.fromOffset(12, 10), Enum.Font.GothamBold, Color3.fromRGB(255, 195, 78), 14)
-local bestLabel = makeLabel(stats, "BestDay", "BEST DAY  0", UDim2.new(1, -20, 0, 22), UDim2.fromOffset(12, 36), Enum.Font.GothamBold, Color3.fromRGB(208, 227, 240), 12)
-local winsLabel = makeLabel(stats, "Wins", "100-DAY WINS  0", UDim2.new(1, -20, 0, 22), UDim2.fromOffset(12, 59), Enum.Font.GothamBold, Color3.fromRGB(208, 227, 240), 12)
-local resourcesLabel = makeLabel(stats, "Resources", "WOOD 0   •   STONE 0", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 82), Enum.Font.GothamBold, Color3.fromRGB(155, 221, 190), 12)
-local campFuelLabel = makeLabel(stats, "CampFuel", "CAMPFIRE 100%", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 105), Enum.Font.GothamBold, Color3.fromRGB(255, 164, 93), 12)
-local discoveriesLabel = makeLabel(stats, "Discoveries", "DISCOVERIES 0 / 3", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 127), Enum.Font.GothamBold, Color3.fromRGB(140, 216, 255), 12)
-local progressionLabel = makeLabel(stats, "Progression", "XP 0  •  TROPHIES 0  •  1.0x", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 149), Enum.Font.GothamBold, Color3.fromRGB(232, 211, 255), 11)
-
-local timerBack = Instance.new("Frame")
-timerBack.Name = "TimerBack"
-timerBack.AnchorPoint = Vector2.new(0.5, 1)
-timerBack.Position = UDim2.new(0.5, 0, 1, -24)
-timerBack.Size = UDim2.new(0.58, 0, 0, 12)
-timerBack.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
-timerBack.Parent = gui
-rounded(timerBack, 6)
-local timerFill = Instance.new("Frame")
-timerFill.Name = "Fill"
-timerFill.Size = UDim2.fromScale(1, 1)
-timerFill.BackgroundColor3 = Color3.fromRGB(226, 144, 57)
-timerFill.Parent = timerBack
-rounded(timerFill, 6)
-local timerText = makeLabel(gui, "Timer", "GET READY", UDim2.new(0.8, 0, 0, 22), UDim2.new(0.1, 0, 1, -53), Enum.Font.GothamBold, Color3.fromRGB(245, 242, 238), 12)
-timerText.TextXAlignment = Enum.TextXAlignment.Center
-
-local notice = Instance.new("TextLabel")
-notice.Name = "Notice"
-notice.AnchorPoint = Vector2.new(0.5, 0)
-notice.Position = UDim2.new(0.5, 0, 0, 120)
-notice.Size = UDim2.new(0.86, 0, 0, 54)
-notice.BackgroundColor3 = Color3.fromRGB(35, 43, 28)
-notice.BackgroundTransparency = 1
-notice.TextTransparency = 1
-notice.Text = ""
-notice.TextWrapped = true
-notice.Font = Enum.Font.GothamBlack
-notice.TextSize = 17
-notice.TextColor3 = Color3.fromRGB(255, 167, 116)
-notice.Parent = gui
-rounded(notice, 12)
-
-showNotice = function(message)
-	notice.Text = tostring(message)
-	TweenService:Create(notice, TweenInfo.new(0.2), {BackgroundTransparency = 0.08, TextTransparency = 0}):Play()
-	task.delay(3.5, function()
-		if notice.Parent then
-			TweenService:Create(notice, TweenInfo.new(0.35), {BackgroundTransparency = 1, TextTransparency = 1}):Play()
-		end
-	end)
-end
-
-local function updateStats()
-	coinsLabel.Text = "◈  " .. tostring(player:GetAttribute("Coins") or 0) .. " COINS"
-	bestLabel.Text = "BEST DAY  " .. tostring(player:GetAttribute("BestDay") or 0)
-	winsLabel.Text = "100-DAY WINS  " .. tostring(player:GetAttribute("Wins") or 0)
-	resourcesLabel.Text = "WOOD " .. tostring(player:GetAttribute("Wood") or 0) .. "   •   STONE " .. tostring(player:GetAttribute("Stone") or 0)
-	discoveriesLabel.Text = "DISCOVERIES " .. tostring(player:GetAttribute("Discoveries") or 0) .. " / 3"
-	progressionLabel.Text = "XP " .. tostring(player:GetAttribute("XP") or 0) .. "  •  TROPHIES " .. tostring(player:GetAttribute("Trophies") or 0) .. "  •  " .. string.format("%.2f", tonumber(player:GetAttribute("XPMultiplier")) or 1) .. "x"
-end
-player:GetAttributeChangedSignal("Coins"):Connect(updateStats)
-player:GetAttributeChangedSignal("BestDay"):Connect(updateStats)
-player:GetAttributeChangedSignal("Wins"):Connect(updateStats)
-player:GetAttributeChangedSignal("Wood"):Connect(updateStats)
-player:GetAttributeChangedSignal("Stone"):Connect(updateStats)
-player:GetAttributeChangedSignal("XP"):Connect(updateStats)
-player:GetAttributeChangedSignal("Trophies"):Connect(updateStats)
-player:GetAttributeChangedSignal("XPMultiplier"):Connect(updateStats)
-player:GetAttributeChangedSignal("Stamina"):Connect(function()
-	local stamina = math.clamp(tonumber(player:GetAttribute("Stamina")) or 100, 0, 100)
-	staminaFill.Size = UDim2.fromScale(stamina / 100, 1)
-	staminaFill.BackgroundColor3 = stamina <= 20 and Color3.fromRGB(255, 105, 96) or Color3.fromRGB(113, 215, 143)
-	staminaText.Text = "STAMINA " .. stamina .. "%"
-	if stamina <= 0 and sprintHeld then setSprinting(false) end
-end)
-updateStats()
-
+for _, attr in ipairs({"Team","Wins","Goals","Matches"}) do player:GetAttributeChangedSignal(attr):Connect(updatePlayerStats) end
+updatePlayerStats()
 stateEvent.OnClientEvent:Connect(function(state)
-	if type(state) ~= "table" then return end
-	dayLabel.Text = string.format("DAY %d / %d", state.day or 0, state.targetDays or 100)
-	phaseLabel.Text = string.upper(tostring(state.phase or "UNKNOWN"))
-	local duration = (state.phase == "Yeti Hunt") and 75 or 12
-	local remaining = math.max(0, tonumber(state.secondsLeft) or 0)
-	timerFill.Size = UDim2.fromScale(math.clamp(remaining / duration, 0, 1), 1)
-	timerText.Text = (state.phase == "Yeti Hunt" and "SURVIVE THE HUNT  •  " or "NEXT HUNT IN  •  ") .. tostring(remaining) .. "s"
-	phaseLabel.TextColor3 = state.phase == "Yeti Hunt" and Color3.fromRGB(255, 118, 91) or Color3.fromRGB(130, 218, 255)
-	if state.isBloodMoon then
-		eventLabel.Text = "☾  BLOOD MOON  •  EXTRA YETI + BONUS DAMAGE"
-		eventLabel.TextColor3 = Color3.fromRGB(255, 105, 112)
-	else
-		eventLabel.Text = state.phase == "Camp" and "CAMP PHASE  •  GATHER, CRAFT, REFUEL" or "FOREST WATCH  •  STAY TOGETHER"
-		eventLabel.TextColor3 = Color3.fromRGB(178, 203, 157)
-	end
-	local fuel = math.clamp(tonumber(state.campFuel) or 0, 0, 100)
-	campFuelLabel.Text = "CAMPFIRE " .. math.floor(fuel) .. "%"
-	campFuelLabel.TextColor3 = fuel > 35 and Color3.fromRGB(255, 164, 93) or Color3.fromRGB(255, 91, 91)
+ if type(state) ~= "table" then return end
+ redScore.Text = "RED  " .. tostring(state.redScore or 0); blueScore.Text = tostring(state.blueScore or 0) .. "  BLUE"
+ phaseLabel.Text = string.upper(tostring(state.phase or "READY")) .. "  •  MATCH " .. tostring(state.matchNumber or 0)
+ local remaining = math.max(0, tonumber(state.secondsLeft) or 0); clock.Text = string.format("%02d:%02d", math.floor(remaining/60), remaining%60)
+ if state.phase == "LIVE" then clock.TextColor3 = Color3.fromRGB(142,245,177) else clock.TextColor3 = white end
 end)
 noticeEvent.OnClientEvent:Connect(showNotice)
-player.CharacterAdded:Connect(function()
-	setSprinting(false)
-end)
-
--- Client-side finishing pass: restrained post-processing keeps the scene moody without heavy blur.
-local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere") or Instance.new("Atmosphere")
-atmosphere.Name = "IceYetiAtmosphere"
-atmosphere.Density = 0.34
-atmosphere.Offset = 0.08
-atmosphere.Color = Color3.fromRGB(156, 190, 211)
-atmosphere.Decay = Color3.fromRGB(45, 63, 78)
-atmosphere.Glare = 0.12
-atmosphere.Haze = 2.1
-atmosphere.Parent = Lighting
-
-local bloom = Lighting:FindFirstChild("IceYetiBloom") or Instance.new("BloomEffect")
-bloom.Name = "IceYetiBloom"
-bloom.Intensity = 0.32
-bloom.Size = 24
-bloom.Threshold = 1.4
-bloom.Parent = Lighting
-
-local colorGrade = Lighting:FindFirstChild("IceYetiColorGrade") or Instance.new("ColorCorrectionEffect")
-colorGrade.Name = "IceYetiColorGrade"
-colorGrade.Brightness = -0.015
-colorGrade.Contrast = 0.16
-colorGrade.Saturation = -0.02
-colorGrade.TintColor = Color3.fromRGB(195, 218, 235)
-colorGrade.Parent = Lighting
-
-local rays = Lighting:FindFirstChild("IceYetiSunRays") or Instance.new("SunRaysEffect")
-rays.Name = "IceYetiSunRays"
-rays.Intensity = 0.025
-rays.Spread = 0.72
-rays.Parent = Lighting
