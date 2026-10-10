@@ -3,6 +3,8 @@
 All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
 ## 2026-10-10 — Playable soccer practice build
+- Added timed two-half match flow, kick-off countdowns, goal restarts, half-time, full-time and automatic next-match setup.
+- Added out-of-bounds restart decisions for throw-ins, corners and goal kicks; the scoreboard subtitle now identifies live match mode.
 - Added a sprint toggle using Shift on keyboard and a large SPRINT button on touch devices; uses configured walk/sprint speeds.
 - Reworked pass, shoot and lob controls into larger high-contrast mobile buttons while retaining Q/E/F keyboard shortcuts; standard Roblox movement controls remain enabled.
 - Made the goal side and rear nets collidable so the ball is contained instead of passing through the netting.
