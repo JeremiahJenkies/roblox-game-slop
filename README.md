@@ -53,3 +53,10 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 - Repository paths and Rojo mapping have been checked against the project configuration.
 - The new service code has not been executed inside Roblox Studio from this environment. Run a 2-player Studio test for goals in both halves, repeated goals, out-of-bounds restarts, dribble possession changes, kick power at 20% and 100%, bobble-head appearance on R6/R15, full-time rewards, sprint stamina and cosmetics before publishing.
 - This is not yet the complete 12-part mega-prompt: matchmaking/reserved servers, bot and goalkeeper AI, replays, full animation/audio, ranked seasons, receipt-safe Robux products and performance profiling still need implementation and Studio QA.
+
+### Impulse dribbling controls
+- Pass: Q; Shoot: E; Lob: F; Tackle: C; Sprint: Shift.
+- Feint: Z; Step-over: X; Knock-on: V; Drag-back: B; Quick turn: G; Shield: H.
+- Tuning: `src/shared/Config/DribbleConfig.lua`. The ball stays server-owned; dribbling applies capped impulses rather than attaching the ball to a player.
+- Studio-only chat commands: `/dribbledebug`, `/dribbledebugoff`, `/dribletouch`, `/dribbleskill 0.0` through `/dribbleskill 1.0`.
+- Animation IDs are placeholders (0); replace them with published animation asset IDs before adding animation playback. Touch sound IDs are blank placeholders.
