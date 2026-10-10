@@ -16,5 +16,7 @@ Config.AttackCooldown = 1.7
 Config.BaseReward = 10
 Config.RewardPerDay = 2
 Config.DataStoreName = "IceYetiSurvival_v1"
+Config.AutoSaveSeconds = 60
+Config.BloodMoonEveryDays = 5
 
 return Config
