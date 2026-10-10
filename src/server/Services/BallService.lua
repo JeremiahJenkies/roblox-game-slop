@@ -103,6 +103,7 @@ function BallService.ResetBall()
     currentBall:SetAttribute("PreviousTouchedByUserId", 0)
     currentBall:SetAttribute("LastTouchedTeam", "")
     currentBall:SetAttribute("PreviousTouchedTeam", "")
+    currentBall:SetAttribute("PossessorUserId", 0)
     previousPosition = currentBall.Position
     lastMovedAt = os.clock()
     pcall(function() currentBall:SetNetworkOwner(nil) end)
@@ -212,6 +213,7 @@ local function doKick(player: Player, action: any, direction: any, powerValue: a
     if horizontal.Magnitude < 0.05 then return end
     local finalDirection = (horizontal.Unit + Vector3.new(0, y, 0)).Unit
     recordTouch(player)
+    currentBall:SetAttribute("PossessorUserId", 0)
     local desiredSpeed = basePower * power
     currentBall.AssemblyLinearVelocity = finalDirection * math.max(currentBall.AssemblyLinearVelocity.Magnitude * 0.25, 0)
     currentBall:ApplyImpulse(finalDirection * desiredSpeed * currentBall.AssemblyMass)
@@ -232,21 +234,23 @@ local function pointAtGoalPlane(previous: Vector3, current: Vector3, lineZ: numb
     local top = getPitchTop() + PitchConfig.GoalHeight - radius
     local bottom = getPitchTop() + radius
     if math.abs(crossing.X) > halfOpening or crossing.Y < bottom or crossing.Y > top then return false end
-    if goalLocked then return true end
+    if goalLocked or scoredThisTrip then return true end
     goalLocked = true
     local currentBall = ball
     local scorerId = currentBall and currentBall:GetAttribute("LastTouchedByUserId") or 0
     local assistId = currentBall and currentBall:GetAttribute("PreviousTouchedByUserId") or 0
-    if scoredThisTrip then return true end
-    scoredThisTrip = true
     local accepted = MatchService.RegisterGoal(scoringTeam, scorerId, assistId)
     if accepted then
+        scoredThisTrip = true
+        if currentBall then currentBall:SetAttribute("PossessorUserId", 0) end
         notifyAll("GOAL! " .. scoringTeam .. " scores!")
         task.delay(MatchConfig.GoalResetSeconds, function()
             BallService.ResetBall()
             goalLocked = false
         end)
     else
+        -- A crossing during a stoppage is not a goal; leave the ball eligible for the next live play.
+        scoredThisTrip = false
         goalLocked = false
     end
     return true
@@ -254,9 +258,13 @@ end
 
 local function checkForGoal(previous: Vector3, current: Vector3): boolean
     local halfLength = PitchConfig.Length / 2
-    -- Red defends the north end; Blue defends the south end.
-    if pointAtGoalPlane(previous, current, -halfLength, "Blue", true) then return true end
-    if pointAtGoalPlane(previous, current, halfLength, "Red", false) then return true end
+    local matchState = MatchService.GetState()
+    -- Teams switch ends at half-time: Red attacks south in half one and north in half two.
+    local redAttacksNorth = (tonumber(matchState.half) or 1) == 2
+    local northScoringTeam = redAttacksNorth and "Red" or "Blue"
+    local southScoringTeam = redAttacksNorth and "Blue" or "Red"
+    if pointAtGoalPlane(previous, current, -halfLength, northScoringTeam, true) then return true end
+    if pointAtGoalPlane(previous, current, halfLength, southScoringTeam, false) then return true end
     return false
 end
 
@@ -410,35 +418,93 @@ function BallService.Init()
         if os.clock() - lastMovedAt >= BallConfig.StuckBallSeconds then BallService.ResetBall() end
         previousPosition = currentBall.Position
     end))
-    -- Low-frequency server nudge gives nearby players a non-sticky dribble touch without client ball ownership.
+    -- Soft possession keeps the ball close to a moving player's feet without welding or anchoring it.
     task.spawn(function()
         while ball and ball.Parent do
-            task.wait(0.12)
+            task.wait(0.05)
             local currentBall = ball
-            if currentBall and currentBall.Parent and not goalLocked then
-                for _, player in ipairs(Players:GetPlayers()) do
-                    local character = player.Character
+            if not currentBall or not currentBall.Parent or goalLocked then continue end
+            local matchState = MatchService.GetState()
+            if matchState.phase ~= "PLAYING" then
+                currentBall:SetAttribute("PossessorUserId", 0)
+                continue
+            end
+
+            local now = os.clock()
+            local possessorId = currentBall:GetAttribute("PossessorUserId")
+            local possessor = typeof(possessorId) == "number" and possessorId > 0 and Players:GetPlayerByUserId(possessorId) or nil
+            local chosenPlayer: Player? = nil
+            local chosenRoot: BasePart? = nil
+            local chosenHumanoid: Humanoid? = nil
+            local nearestDistance = BallConfig.DribbleAcquireRange
+
+            if possessor then
+                local character = possessor.Character
+                local root = character and character:FindFirstChild("HumanoidRootPart")
+                local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                if root and root:IsA("BasePart") and humanoid and humanoid.Health > 0 then
+                    local distance = (root.Position - currentBall.Position).Magnitude
+                    if distance <= BallConfig.DribbleReleaseRange then
+                        chosenPlayer = possessor
+                        chosenRoot = root
+                        chosenHumanoid = humanoid
+                    end
+                end
+            end
+
+            if not chosenPlayer then
+                currentBall:SetAttribute("PossessorUserId", 0)
+                for _, candidate in ipairs(Players:GetPlayers()) do
+                    local character = candidate.Character
                     local root = character and character:FindFirstChild("HumanoidRootPart")
                     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-                    local now = os.clock()
                     if root and root:IsA("BasePart") and humanoid and humanoid.Health > 0
-                        and (root.Position - currentBall.Position).Magnitude <= BallConfig.TouchRange
-                        and humanoid.MoveDirection.Magnitude > 0.1
-                        and root.AssemblyLinearVelocity.Magnitude > 2
-                        and now - (lastDribbleAt[player] or 0) >= 0.4 then
-                        lastDribbleAt[player] = now
-                        recordTouch(player)
-                        local direction = Vector3.new(humanoid.MoveDirection.X, 0, humanoid.MoveDirection.Z)
-                        if direction.Magnitude > 0.1 then
-                            currentBall:ApplyImpulse(direction.Unit * math.min(7, root.AssemblyLinearVelocity.Magnitude * 0.35) * currentBall.AssemblyMass)
-                            lastMovedAt = now
+                        and humanoid.MoveDirection.Magnitude > 0.1 then
+                        local distance = (root.Position - currentBall.Position).Magnitude
+                        if distance < nearestDistance then
+                            nearestDistance = distance
+                            chosenPlayer = candidate
+                            chosenRoot = root
+                            chosenHumanoid = humanoid
                         end
+                    end
+                end
+                if chosenPlayer then
+                    recordTouch(chosenPlayer)
+                    currentBall:SetAttribute("PossessorUserId", chosenPlayer.UserId)
+                end
+            end
+
+            if chosenPlayer and chosenRoot and chosenHumanoid and chosenHumanoid.MoveDirection.Magnitude > 0.1 then
+                local direction = Vector3.new(chosenHumanoid.MoveDirection.X, 0, chosenHumanoid.MoveDirection.Z)
+                if direction.Magnitude > 0.1 then
+                    local groundY = getPitchTop() + radius + 0.03
+                    local target = Vector3.new(chosenRoot.Position.X, groundY, chosenRoot.Position.Z)
+                        + direction.Unit * BallConfig.DribbleTargetOffset
+                    local offset = Vector3.new(target.X - currentBall.Position.X, 0, target.Z - currentBall.Position.Z)
+                    if offset.Magnitude <= BallConfig.DribbleControlRange then
+                        local desiredSpeed = math.min(18, math.max(7, chosenRoot.AssemblyLinearVelocity.Magnitude))
+                        local desiredVelocity = direction.Unit * desiredSpeed
+                        if offset.Magnitude > 0.1 then
+                            desiredVelocity += offset.Unit * math.min(BallConfig.DribbleCorrectionSpeed, offset.Magnitude * 2)
+                        end
+                        local currentVelocity = currentBall.AssemblyLinearVelocity
+                        local blend = 0.28
+                        currentBall.AssemblyLinearVelocity = Vector3.new(
+                            currentVelocity.X + (desiredVelocity.X - currentVelocity.X) * blend,
+                            currentVelocity.Y,
+                            currentVelocity.Z + (desiredVelocity.Z - currentVelocity.Z) * blend
+                        )
+                        lastDribbleAt[chosenPlayer] = now
+                        lastMovedAt = now
+                    else
+                        currentBall:SetAttribute("PossessorUserId", 0)
                     end
                 end
             end
         end
     end)
-    print("[BallService] Validated kicks, server physics, speed cap, anti-tunnelling, touch dribbling and goal-plane checks are active.")
+    print("[BallService] Validated kicks, soft player-to-ball control, adjustable power and half-aware goal detection are active.")
 end
 
 return BallService
