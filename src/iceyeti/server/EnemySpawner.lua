@@ -145,7 +145,7 @@ function Spawner.SpawnForDay(day, destination)
 	if spawnedByRound[day] then return 0 end
 	spawnedByRound[day] = true
 	local total = 0
-	for _, point in ipairs(folder:GetDescendants()) do
+	for _, point in ipairs(folder:GetChildren()) do
 		if point:IsA("BasePart") or point:IsA("Model") then
 			local enabled = getAttribute(point, "SpawnEnabled", EnemyConfig.Defaults.SpawnEnabled)
 			local minDay = positiveNumber(getAttribute(point, "MinDay", EnemyConfig.Defaults.MinDay), 1, 1, 100000)
