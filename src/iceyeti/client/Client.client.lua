@@ -188,13 +188,28 @@ stateEvent.OnClientEvent:Connect(function(state)
 end)
 noticeEvent.OnClientEvent:Connect(showNotice)
 
--- Small local atmospheric layer; no gameplay authority is placed on the client.
+-- Client-side finishing pass: restrained post-processing keeps the scene moody without heavy blur.
 local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere") or Instance.new("Atmosphere")
 atmosphere.Name = "IceYetiAtmosphere"
-atmosphere.Density = 0.32
-atmosphere.Offset = 0.12
+atmosphere.Density = 0.28
+atmosphere.Offset = 0.08
 atmosphere.Color = Color3.fromRGB(164, 190, 224)
-atmosphere.Decay = Color3.fromRGB(60, 68, 105)
-atmosphere.Glare = 0.1
-atmosphere.Haze = 1.8
+atmosphere.Decay = Color3.fromRGB(48, 58, 91)
+atmosphere.Glare = 0.04
+atmosphere.Haze = 1.2
 atmosphere.Parent = Lighting
+
+local bloom = Lighting:FindFirstChild("IceYetiBloom") or Instance.new("BloomEffect")
+bloom.Name = "IceYetiBloom"
+bloom.Intensity = 0.22
+bloom.Size = 18
+bloom.Threshold = 1.6
+bloom.Parent = Lighting
+
+local colorGrade = Lighting:FindFirstChild("IceYetiColorGrade") or Instance.new("ColorCorrectionEffect")
+colorGrade.Name = "IceYetiColorGrade"
+colorGrade.Brightness = -0.025
+colorGrade.Contrast = 0.12
+colorGrade.Saturation = -0.08
+colorGrade.TintColor = Color3.fromRGB(207, 220, 255)
+colorGrade.Parent = Lighting
