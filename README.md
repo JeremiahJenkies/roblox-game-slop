@@ -5,7 +5,7 @@ Current build: playable practice foundation with a generated pitch, a server-own
 ## Features in this build
 - Configurable 150 x 240 stud football pitch with mowing stripes, field markings, penalty/goal boxes, goals and nets, stepped grandstands, supports, floodlights, and atmosphere/color grading.
 - Server-owned football with black panel detailing, validated Pass/Shoot/Lob/Clearance actions, range/cooldown checks, speed cap, anti-tunnelling check, stuck/out-of-bounds recovery, moving-player dribble nudges and mathematical goal-plane detection.
-- Practice scoreboard and profile HUD; keyboard controls Q=Pass, E=Shoot, F=Lob plus touch-screen buttons.
+- Practice scoreboard and profile HUD; keyboard controls Q=Pass, E=Shoot, F=Lob, Shift=toggle sprint, plus large touch-screen Pass/Shoot/Lob/Sprint buttons. Standard Roblox movement controls remain enabled.
 - Red/Blue teams, balanced assignment, side-based respawns and simple team-coloured player appearance.
 - DataService profile template and merged UpdateAsync writes; existing DataStore name `IceYetiSurvival_v1` and `player_<UserId>` keys are preserved. Legacy fields are not intentionally dropped.
 - Stale `IceYetiServer`/`SoccerServer` folders, old player LocalScripts and legacy HUDs are removed during startup.
