@@ -10,6 +10,7 @@ type Profile = {[string]: any}
 local DataService = {}
 local profiles: {[Player]: Profile} = {}
 local canSave: {[Player]: boolean} = {}
+local loading: {[Player]: boolean} = {}
 local store: GlobalDataStore? = nil
 local profileUpdate: RemoteEvent? = nil
 local profileRequest: RemoteEvent? = nil
@@ -116,12 +117,18 @@ function DataService.IncrementStat(player: Player, statName: string, amount: num
 end
 
 function DataService.LoadProfile(player: Player)
-    if profiles[player] then return end
+    if profiles[player] or loading[player] then return end
+    loading[player] = true
     local ok, saved: any = false, nil
-    if store then
-        ok, saved = pcall(function() return store:GetAsync("player_" .. player.UserId) end)
+    local dataStore = store
+    if dataStore then
+        ok, saved = pcall(function() return dataStore:GetAsync("player_" .. player.UserId) end)
     end
-    if player.Parent ~= Players then return end
+    if player.Parent ~= Players then
+        loading[player] = nil
+        return
+    end
+    loading[player] = nil
     if ok then
         canSave[player] = true
         profiles[player] = normalizeProfile(saved)
@@ -136,10 +143,11 @@ end
 
 function DataService.SaveProfile(player: Player)
     local profile = profiles[player]
-    if not profile or not canSave[player] or not store then return false end
+    local dataStore = store
+    if not profile or not canSave[player] or not dataStore then return false end
     local payload = makeSavePayload(profile)
     local ok, err = pcall(function()
-        store:UpdateAsync("player_" .. player.UserId, function(existing)
+        dataStore:UpdateAsync("player_" .. player.UserId, function(existing)
             -- Merge instead of replacing the record. Legacy/unknown fields like bestDay, wood,
             -- stone, trophies, discoveries, and lowercase historical `wins` remain untouched.
             local merged = type(existing) == "table" and existing or {}
@@ -168,6 +176,7 @@ function DataService.Init()
         DataService.SaveProfile(player)
         profiles[player] = nil
         canSave[player] = nil
+        loading[player] = nil
     end)
     if profileRequest then
         profileRequest.OnServerEvent:Connect(function(player, action)
