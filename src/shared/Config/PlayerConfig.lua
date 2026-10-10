@@ -7,5 +7,6 @@ return {
     StaminaDrainPerSecond = 24,
     StaminaRegenPerSecond = 17,
     CharacterSpawnHeight = 4,
+    SpawnRandomOffset = 5,
     PlayerCollisionGroup = "SoccerPlayers",
 }
