@@ -160,31 +160,45 @@ powerKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 powerKnob.BorderSizePixel = 0
 powerKnob.Parent = powerTrack
 round(powerKnob, 7)
-local draggingPower = false
-local function setKickPowerFromX(screenX: number)
-    local width = math.max(1, powerTrack.AbsoluteSize.X)
-    local fraction = math.clamp((screenX - powerTrack.AbsolutePosition.X) / width, 0, 1)
-    kickPower = math.floor((0.2 + fraction * 0.8) * 100 + 0.5) / 100
+-- Hold left mouse (or touch and hold the meter) to charge power.
+-- Releasing lets the meter drain back to its 20% resting value.
+local chargingPower = false
+local chargeRate = 0.55 -- full charge in about 1.45 seconds
+local drainRate = 1.1
+local function renderKickPower()
     local visualFraction = (kickPower - 0.2) / 0.8
     powerFill.Size = UDim2.fromScale(visualFraction, 1)
     powerKnob.Position = UDim2.new(visualFraction, 0, 0.5, 0)
     powerLabel.Text = "KICK POWER " .. tostring(math.floor(kickPower * 100 + 0.5)) .. "%"
 end
+local function beginCharging()
+    chargingPower = true
+end
+local function stopCharging()
+    chargingPower = false
+end
 powerTrack.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingPower = true
-        setKickPowerFromX(input.Position.X)
+        beginCharging()
     end
 end)
-UserInputService.InputChanged:Connect(function(input)
-    if draggingPower and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        setKickPowerFromX(input.Position.X)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 and not processed then
+        beginCharging()
     end
 end)
 UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingPower = false
+        stopCharging()
     end
+end)
+RunService.RenderStepped:Connect(function(deltaTime)
+    if chargingPower then
+        kickPower = math.min(1, kickPower + chargeRate * deltaTime)
+    else
+        kickPower = math.max(0.2, kickPower - drainRate * deltaTime)
+    end
+    renderKickPower()
 end)
 local sprinting = false
 local humanoid: Humanoid? = nil
