@@ -43,7 +43,7 @@ local function getPitchTop(): number
     return PitchConfig.SurfaceCenterY + PitchConfig.SurfaceThickness / 2
 end
 
-local function attachPanel(parent: Folder, targetBall: Part, index: number, normal: Vector3)
+local function attachPanel(targetBall: Part, index: number, normal: Vector3)
     local surfacePosition = targetBall.Position + normal.Unit * (radius - 0.015)
     local reference = math.abs(normal.Unit:Dot(Vector3.yAxis)) > 0.92 and Vector3.xAxis or Vector3.yAxis
     local right = reference:Cross(normal.Unit).Unit
@@ -61,7 +61,7 @@ local function attachPanel(parent: Folder, targetBall: Part, index: number, norm
     panel.CanQuery = false
     panel.Massless = true
     panel.CastShadow = false
-    panel.Parent = parent
+    panel.Parent = targetBall
     local weld = Instance.new("WeldConstraint")
     weld.Part0 = targetBall
     weld.Part1 = panel
@@ -69,7 +69,6 @@ local function attachPanel(parent: Folder, targetBall: Part, index: number, norm
 end
 
 local function addBallPanels(targetBall: Part)
-    if not stadium then return end
     -- A compact black-panel pattern so the sphere reads as a football without a third-party texture.
     local normals = {
         Vector3.new(0, 1, 0), Vector3.new(0, -1, 0),
@@ -79,7 +78,7 @@ local function addBallPanels(targetBall: Part)
         Vector3.new(0.39, -0.35, -0.85), Vector3.new(-0.39, -0.35, -0.85),
         Vector3.new(0.0, 0.84, -0.54), Vector3.new(0.0, -0.84, 0.54),
     }
-    for index, normal in ipairs(normals) do attachPanel(stadium, targetBall, index, normal) end
+    for index, normal in ipairs(normals) do attachPanel(targetBall, index, normal) end
 end
 
 local function getKickoffPosition(): Vector3
@@ -273,6 +272,7 @@ local function resetIfInvalidOrOutOfBounds(position: Vector3): boolean
 end
 
 function BallService.Init()
+    Workspace:SetAttribute("BallReady", false)
     local folder = ReplicatedStorage:WaitForChild("SoccerRemotes")
     kickRemote = folder:WaitForChild("KickBall") :: RemoteEvent
     noticeRemote = folder:WaitForChild("Notice") :: RemoteEvent
@@ -311,7 +311,35 @@ function BallService.Init()
         if os.clock() - lastMovedAt >= BallConfig.StuckBallSeconds then BallService.ResetBall() end
         previousPosition = currentBall.Position
     end))
-    print("[BallService] Validated kicks, server physics, speed cap, anti-tunnelling and goal-plane checks are active.")
+    -- Low-frequency server nudge gives nearby players a non-sticky dribble touch without client ball ownership.
+    task.spawn(function()
+        while ball and ball.Parent do
+            task.wait(0.12)
+            local currentBall = ball
+            if currentBall and currentBall.Parent and not goalLocked then
+                for _, player in ipairs(Players:GetPlayers()) do
+                    local character = player.Character
+                    local root = character and character:FindFirstChild("HumanoidRootPart")
+                    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+                    local now = os.clock()
+                    if root and root:IsA("BasePart") and humanoid and humanoid.Health > 0
+                        and (root.Position - currentBall.Position).Magnitude <= BallConfig.TouchRange
+                        and humanoid.MoveDirection.Magnitude > 0.1
+                        and root.AssemblyLinearVelocity.Magnitude > 2
+                        and now - (lastDribbleAt[player] or 0) >= 0.4 then
+                        lastDribbleAt[player] = now
+                        recordTouch(player)
+                        local direction = Vector3.new(humanoid.MoveDirection.X, 0, humanoid.MoveDirection.Z)
+                        if direction.Magnitude > 0.1 then
+                            currentBall:ApplyImpulse(direction.Unit * math.min(7, root.AssemblyLinearVelocity.Magnitude * 0.35) * currentBall.AssemblyMass)
+                            lastMovedAt = now
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    print("[BallService] Validated kicks, server physics, speed cap, anti-tunnelling, touch dribbling and goal-plane checks are active.")
 end
 
 return BallService
