@@ -43,7 +43,7 @@ local top = Instance.new("Frame")
 top.Name = "TopBar"
 top.AnchorPoint = Vector2.new(0.5, 0)
 top.Position = UDim2.new(0.5, 0, 0, 18)
-top.Size = UDim2.new(0.9, 0, 0, 88)
+top.Size = UDim2.new(0.9, 0, 0, 94)
 top.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
 top.BackgroundTransparency = 0.08
 top.Parent = gui
@@ -57,6 +57,8 @@ makeLabel(top, "GameTitle", "SURVIVE ICE YETIS", UDim2.new(1, -24, 0, 26), UDim2
 local dayLabel = makeLabel(top, "Day", "DAY 0 / 100", UDim2.new(0.48, 0, 0, 25), UDim2.fromOffset(16, 45), Enum.Font.GothamBold, Color3.fromRGB(245, 245, 250), 15)
 local phaseLabel = makeLabel(top, "Phase", "PREPARING", UDim2.new(0.5, -16, 0, 25), UDim2.new(0.5, 0, 0, 45), Enum.Font.GothamBold, Color3.fromRGB(130, 218, 255), 14)
 phaseLabel.TextXAlignment = Enum.TextXAlignment.Right
+local eventLabel = makeLabel(top, "Event", "FOREST WATCH", UDim2.new(1, -24, 0, 16), UDim2.fromOffset(16, 69), Enum.Font.GothamBold, Color3.fromRGB(178, 203, 157), 10)
+eventLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 
 local flareButton = Instance.new("TextButton")
@@ -98,16 +100,24 @@ local function nearestYeti()
 	return selected, selectedDistance
 end
 
+local flareReady = true
 flareButton.Activated:Connect(function()
+	if not flareReady then return end
 	local target, distance = nearestYeti()
 	if not target then
 		showNotice("No Ice Yeti in flare range. Keep moving!")
 		return
 	end
+	flareReady = false
 	flareEvent:FireServer(target)
 	flareButton.Text = "FLARE THROWN"
-	task.delay(0.65, function()
-		if flareButton.Parent then flareButton.Text = "✦  THROW FLARE" end
+	flareButton.BackgroundColor3 = Color3.fromRGB(70, 73, 61)
+	task.delay(1.1, function()
+		flareReady = true
+		if flareButton.Parent then
+			flareButton.Text = "✦  THROW FLARE"
+			flareButton.BackgroundColor3 = Color3.fromRGB(132, 65, 35)
+		end
 	end)
 end)
 
@@ -190,6 +200,13 @@ stateEvent.OnClientEvent:Connect(function(state)
 	timerFill.Size = UDim2.fromScale(math.clamp(remaining / duration, 0, 1), 1)
 	timerText.Text = (state.phase == "Yeti Hunt" and "SURVIVE THE HUNT  •  " or "NEXT HUNT IN  •  ") .. tostring(remaining) .. "s"
 	phaseLabel.TextColor3 = state.phase == "Yeti Hunt" and Color3.fromRGB(255, 118, 91) or Color3.fromRGB(130, 218, 255)
+	if state.isBloodMoon then
+		eventLabel.Text = "☾  BLOOD MOON  •  EXTRA YETI + BONUS DAMAGE"
+		eventLabel.TextColor3 = Color3.fromRGB(255, 105, 112)
+	else
+		eventLabel.Text = state.phase == "Camp" and "CAMP PHASE  •  GATHER, CRAFT, REFUEL" or "FOREST WATCH  •  STAY TOGETHER"
+		eventLabel.TextColor3 = Color3.fromRGB(178, 203, 157)
+	end
 	local fuel = math.clamp(tonumber(state.campFuel) or 0, 0, 100)
 	campFuelLabel.Text = "CAMPFIRE " .. math.floor(fuel) .. "%"
 	campFuelLabel.TextColor3 = fuel > 35 and Color3.fromRGB(255, 164, 93) or Color3.fromRGB(255, 91, 91)
