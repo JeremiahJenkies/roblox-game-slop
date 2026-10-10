@@ -1,5 +1,15 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+-- Rojo does not always remove objects that were created by an older, now-unmapped project tree.
+-- Clean up only the specifically known legacy game folders before starting the new services.
+for _, legacyName in ipairs({"IceYetiServer", "SoccerServer"}) do
+    local legacy = ServerScriptService:FindFirstChild(legacyName)
+    if legacy then
+        warn("[Bootstrap] Removing stale legacy server folder: " .. legacyName)
+        legacy:Destroy()
+    end
+end
 local Remotes = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Remotes"))
 local servicesFolder = script.Parent:WaitForChild("Services")
 
@@ -10,6 +20,7 @@ local serviceNames = {
     "PitchService",
     "TeamService",
     "MatchService",
+    "BallService",
 }
 
 for _, serviceName in ipairs(serviceNames) do
