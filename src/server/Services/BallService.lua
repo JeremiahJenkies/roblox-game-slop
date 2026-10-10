@@ -17,6 +17,7 @@ local lastMovedAt = os.clock()
 local lastKickAt: {[Player]: number} = {}
 local lastDribbleAt: {[Player]: number} = {}
 local goalLocked = false
+local scoredThisTrip = false
 local maid = Maid.new()
 local kickRemote: RemoteEvent? = nil
 local noticeRemote: RemoteEvent? = nil
@@ -91,6 +92,7 @@ function BallService.ResetBall()
     currentBall.AssemblyLinearVelocity = Vector3.zero
     currentBall.AssemblyAngularVelocity = Vector3.zero
     currentBall.CFrame = CFrame.new(getKickoffPosition())
+    scoredThisTrip = false
     currentBall:SetAttribute("LastTouchedByUserId", 0)
     currentBall:SetAttribute("PreviousTouchedByUserId", 0)
     currentBall:SetAttribute("LastTouchedTeam", "")
@@ -187,7 +189,9 @@ local function doKick(player: Player, action: any, direction: any, powerValue: a
     if horizontal.Magnitude < 0.05 then return end
     local finalDirection = (horizontal.Unit + Vector3.new(0, y, 0)).Unit
     recordTouch(player)
-    currentBall:ApplyImpulse(finalDirection * basePower * power * currentBall.AssemblyMass)
+    local desiredSpeed = basePower * power
+    currentBall.AssemblyLinearVelocity = finalDirection * math.max(currentBall.AssemblyLinearVelocity.Magnitude * 0.25, 0)
+    currentBall:ApplyImpulse(finalDirection * desiredSpeed * currentBall.AssemblyMass)
     currentBall.AssemblyAngularVelocity += Vector3.new(-finalDirection.Z, 0, finalDirection.X) * (basePower * power * 0.16)
     lastMovedAt = now
 end
@@ -210,6 +214,8 @@ local function pointAtGoalPlane(previous: Vector3, current: Vector3, lineZ: numb
     local currentBall = ball
     local scorerId = currentBall and currentBall:GetAttribute("LastTouchedByUserId") or 0
     local assistId = currentBall and currentBall:GetAttribute("PreviousTouchedByUserId") or 0
+    if scoredThisTrip then return true end
+    scoredThisTrip = true
     local accepted = MatchService.RegisterGoal(scoringTeam, scorerId, assistId)
     if accepted then
         notifyAll("GOAL! " .. scoringTeam .. " scores!")
