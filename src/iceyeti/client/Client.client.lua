@@ -280,25 +280,31 @@ end)
 -- Client-side finishing pass: restrained post-processing keeps the scene moody without heavy blur.
 local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere") or Instance.new("Atmosphere")
 atmosphere.Name = "IceYetiAtmosphere"
-atmosphere.Density = 0.3
-atmosphere.Offset = 0.05
-atmosphere.Color = Color3.fromRGB(145, 174, 129)
-atmosphere.Decay = Color3.fromRGB(43, 58, 40)
-atmosphere.Glare = 0.03
-atmosphere.Haze = 1.5
+atmosphere.Density = 0.34
+atmosphere.Offset = 0.08
+atmosphere.Color = Color3.fromRGB(156, 190, 211)
+atmosphere.Decay = Color3.fromRGB(45, 63, 78)
+atmosphere.Glare = 0.12
+atmosphere.Haze = 2.1
 atmosphere.Parent = Lighting
 
 local bloom = Lighting:FindFirstChild("IceYetiBloom") or Instance.new("BloomEffect")
 bloom.Name = "IceYetiBloom"
-bloom.Intensity = 0.22
-bloom.Size = 18
-bloom.Threshold = 1.6
+bloom.Intensity = 0.32
+bloom.Size = 24
+bloom.Threshold = 1.4
 bloom.Parent = Lighting
 
 local colorGrade = Lighting:FindFirstChild("IceYetiColorGrade") or Instance.new("ColorCorrectionEffect")
 colorGrade.Name = "IceYetiColorGrade"
-colorGrade.Brightness = -0.025
-colorGrade.Contrast = 0.12
-colorGrade.Saturation = -0.08
-colorGrade.TintColor = Color3.fromRGB(214, 220, 177)
+colorGrade.Brightness = -0.015
+colorGrade.Contrast = 0.16
+colorGrade.Saturation = -0.02
+colorGrade.TintColor = Color3.fromRGB(195, 218, 235)
 colorGrade.Parent = Lighting
+
+local rays = Lighting:FindFirstChild("IceYetiSunRays") or Instance.new("SunRaysEffect")
+rays.Name = "IceYetiSunRays"
+rays.Intensity = 0.025
+rays.Spread = 0.72
+rays.Parent = Lighting
