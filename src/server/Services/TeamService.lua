@@ -62,7 +62,12 @@ function TeamService.PlaceCharacter(player: Player, character: Model)
 end
 
 local function setupPlayer(player: Player)
-    if not player.Team then TeamService.Assign(player) end
+    if player.Team ~= teamA and player.Team ~= teamB then
+        TeamService.Assign(player)
+    else
+        player:SetAttribute("Team", player.Team.Name)
+        player.Neutral = false
+    end
     player.CharacterAdded:Connect(function(character)
         task.spawn(TeamService.PlaceCharacter, player, character)
     end)
