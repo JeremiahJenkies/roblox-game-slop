@@ -57,7 +57,7 @@ local function normalizeProfile(saved: any): Profile
     -- New profile fields take priority. Old lowercase fields are imported when present.
     profile.Coins = nonNegativeInteger(saved.Coins ~= nil and saved.Coins or saved.coins, 0)
     profile.XP = nonNegativeInteger(saved.XP ~= nil and saved.XP or saved.xp, 0)
-    profile.Level = math.max(1, nonNegativeInteger(saved.Level, 1))
+    profile.Level = math.max(1, nonNegativeInteger(saved.Level, math.floor(profile.XP / 100) + 1))
     -- Earlier survival wins lived in lowercase `wins`; those are preserved as legacy data,
     -- not silently converted into soccer wins. The prior soccer prototype used `soccerWins`.
     profile.Wins = nonNegativeInteger(saved.Wins ~= nil and saved.Wins or saved.soccerWins, 0)
@@ -107,7 +107,7 @@ end
 function DataService.IncrementStat(player: Player, statName: string, amount: number): boolean
     local profile = profiles[player]
     if not profile or type(statName) ~= "string" or type(amount) ~= "number" then return false end
-    local allowed = {Coins = true, XP = true, Wins = true, Losses = true, Goals = true, Assists = true, Saves = true, MatchesPlayed = true}
+    local allowed: {[string]: boolean} = {Coins = true, XP = true, Wins = true, Losses = true, Goals = true, Assists = true, Saves = true, MatchesPlayed = true}
     if not allowed[statName] or amount ~= amount or amount == math.huge or amount == -math.huge then return false end
     profile[statName] = math.max(0, nonNegativeInteger(profile[statName], 0) + math.floor(amount))
     if statName == "XP" then profile.Level = math.max(1, math.floor(profile.XP / 100) + 1) end
@@ -121,6 +121,7 @@ function DataService.LoadProfile(player: Player)
     if store then
         ok, saved = pcall(function() return store:GetAsync("player_" .. player.UserId) end)
     end
+    if player.Parent ~= Players then return end
     if ok then
         canSave[player] = true
         profiles[player] = normalizeProfile(saved)
@@ -162,7 +163,7 @@ function DataService.Init()
     else
         warn("[DataService] DataStore unavailable; sessions will not be saved: " .. tostring(storeResult))
     end
-    Players.PlayerAdded:Connect(function(player) DataService.LoadProfile(player) end)
+    Players.PlayerAdded:Connect(function(player) task.spawn(DataService.LoadProfile, player) end)
     Players.PlayerRemoving:Connect(function(player)
         DataService.SaveProfile(player)
         profiles[player] = nil
