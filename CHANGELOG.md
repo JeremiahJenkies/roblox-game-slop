@@ -6,6 +6,7 @@ All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
 - Added a fixed-order server bootstrap, service modules, centralized RemoteEvent creation, Maid and Signal utilities, and a foundation HUD.
 - Added centralized pitch, ball, player, match and reward configuration modules.
+- Improved stand rendering with stepped seating rows and visible supports; cleaned per-player connections with Maid and guarded profile loads against duplicate/late completion.
 - Added a generated 150 x 240 stud football pitch with field markings, goals/nets, Red/Blue spawn markers, stands, floodlights, ambient lighting effects, and invisible outer boundaries.
 - Added balanced team assignment and team-side respawn placement.
 - Added profile template for Coins, XP, Level, Wins, Losses, Goals, Assists, Saves, MatchesPlayed, equipped cosmetics, and Owned.
