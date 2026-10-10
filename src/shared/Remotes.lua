@@ -8,6 +8,8 @@ local EVENT_NAMES = {
     "Notice",
     "KickBall",
     "ActionRequest",
+    "StateRequest",
+    "ProfileRequest",
     "ProfileUpdate",
 }
 
