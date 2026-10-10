@@ -99,11 +99,23 @@ local function buildStadium()
  local old = Workspace:FindFirstChild("SoccerStadium"); if old then old:Destroy() end
  stadium = Instance.new("Folder"); stadium.Name = "SoccerStadium"; stadium.Parent = Workspace
  local width, length = Config.FieldWidth, Config.FieldLength
- Lighting.Technology = Enum.Technology.Future; Lighting.GlobalShadows = true; Lighting.ClockTime = 16.5
- Lighting.Brightness = 2.2; Lighting.EnvironmentDiffuseScale = 0.5; Lighting.EnvironmentSpecularScale = 0.7
+ -- Lighting.Technology is Studio-only; attempting to set it from a runtime script throws and stops the stadium from generating.
+ -- Set Lighting > Technology to Future manually in Studio for the intended high-quality lighting.
+ Lighting.GlobalShadows = true; Lighting.ClockTime = 16.5
+ Lighting.Brightness = 2.2; Lighting.EnvironmentDiffuseScale = 0.8; Lighting.EnvironmentSpecularScale = 0.8
  Lighting.Ambient = Color3.fromRGB(115, 126, 139); Lighting.OutdoorAmbient = Color3.fromRGB(105, 118, 130)
  local atmosphere = Lighting:FindFirstChild("SoccerAtmosphere") or Instance.new("Atmosphere")
- atmosphere.Name = "SoccerAtmosphere"; atmosphere.Density = 0.18; atmosphere.Offset = 0.15; atmosphere.Color = Color3.fromRGB(199, 218, 235); atmosphere.Decay = Color3.fromRGB(92, 113, 137); atmosphere.Haze = 0.8; atmosphere.Parent = Lighting
+ atmosphere.Name = "SoccerAtmosphere"; atmosphere.Density = 0.18; atmosphere.Offset = 0.15; atmosphere.Color = Color3.fromRGB(199, 218, 235); atmosphere.Decay = Color3.fromRGB(92, 113, 137); atmosphere.Haze = 0.8; atmosphere.Glare = 0.12; atmosphere.Parent = Lighting
+ local bloom = Lighting:FindFirstChild("SoccerBloom") or Instance.new("BloomEffect")
+ bloom.Name = "SoccerBloom"; bloom.Intensity = 0.16; bloom.Size = 18; bloom.Threshold = 1.35; bloom.Parent = Lighting
+ local grade = Lighting:FindFirstChild("SoccerColorGrade") or Instance.new("ColorCorrectionEffect")
+ grade.Name = "SoccerColorGrade"; grade.Brightness = 0.015; grade.Contrast = 0.08; grade.Saturation = 0.06; grade.TintColor = Color3.fromRGB(244, 248, 255); grade.Parent = Lighting
+ local rays = Lighting:FindFirstChild("SoccerSunRays") or Instance.new("SunRaysEffect")
+ rays.Name = "SoccerSunRays"; rays.Intensity = 0.045; rays.Spread = 0.65; rays.Parent = Lighting
+ local sky = Lighting:FindFirstChild("SoccerSky") or Instance.new("Sky")
+ sky.Name = "SoccerSky"; sky.CelestialBodiesShown = true; sky.StarCount = 0; sky.SunAngularSize = 14; sky.Parent = Lighting
+ local clouds = Workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+ clouds.Cover = 0.28; clouds.Density = 0.32; clouds.Color = Color3.fromRGB(236, 243, 251); clouds.Parent = Workspace.Terrain
  local ground = part(stadium, "StadiumGround", Vector3.new(width + 100, 2, length + 100), CFrame.new(0, -1.3, 0), Color3.fromRGB(45, 66, 49), Enum.Material.Grass)
  ground.CastShadow = false
  part(stadium, "Pitch", Vector3.new(width, 1, length), CFrame.new(0, 0, 0), Color3.fromRGB(39, 112, 65), Enum.Material.Grass)
@@ -140,11 +152,34 @@ local function buildStadium()
  northGoal = goal("NorthGoal", -length/2, -1); southGoal = goal("SouthGoal", length/2, 1)
  redSpawn = part(stadium, "RedSpawn", Vector3.new(12, 1, 8), CFrame.new(0, 1, length/2 - 35), Color3.fromRGB(194, 56, 57), Enum.Material.SmoothPlastic); redSpawn.Transparency = 1; redSpawn.CanCollide = false
  blueSpawn = part(stadium, "BlueSpawn", Vector3.new(12, 1, 8), CFrame.new(0, 1, -length/2 + 35), Color3.fromRGB(61, 118, 207), Enum.Material.SmoothPlastic); blueSpawn.Transparency = 1; blueSpawn.CanCollide = false
- for _, side in ipairs({-1,1}) do
-  for _, z in ipairs({-length/2 - 20, length/2 + 20}) do
-   local stand = part(stadium, "Grandstand", Vector3.new(width/2 - 15, 7, 14), CFrame.new(side * (width/2 + 20), 3.5, z), Color3.fromRGB(55, 63, 73), Enum.Material.Metal)
-   for row = 1, 3 do part(stadium, "StandTier", Vector3.new(width/2 - 18, 1, 3), CFrame.new(side * (width/2 + 20), row * 1.6, z + (row - 2) * 4), Color3.fromRGB(79, 90, 103), Enum.Material.Metal) end
-   stand.CastShadow = true
+ -- Continuous grandstands along both touchlines and behind each goal.
+ for _, side in ipairs({-1, 1}) do
+  local x = side * (width/2 + 17)
+  local stand = part(stadium, "TouchlineGrandstand", Vector3.new(18, 12, length + 42), CFrame.new(x, 5.5, 0), Color3.fromRGB(50, 61, 74), Enum.Material.Metal)
+  stand.CastShadow = true
+  for row = 1, 5 do
+   local seatBand = part(stadium, "StandSeatBand", Vector3.new(18, 1.15, length + 38), CFrame.new(x, row * 1.75 + 1, 0), row % 2 == 0 and Color3.fromRGB(177, 54, 57) or Color3.fromRGB(61, 95, 132), Enum.Material.Metal)
+   seatBand.CanCollide = true
+  end
+ end
+ for _, endSign in ipairs({-1, 1}) do
+  local z = endSign * (length/2 + 20)
+  part(stadium, "EndGrandstand", Vector3.new(width/2, 10, 18), CFrame.new(0, 4.5, z), Color3.fromRGB(48, 59, 72), Enum.Material.Metal)
+  for row = 1, 4 do
+   part(stadium, "EndStandSeatBand", Vector3.new(width/2 - 6, 1, 18), CFrame.new(0, row * 1.8, z), row % 2 == 0 and Color3.fromRGB(177, 54, 57) or Color3.fromRGB(61, 95, 132), Enum.Material.Metal)
+  end
+ end
+ -- Four floodlight towers frame the pitch and add scale to the stadium.
+ for _, xSign in ipairs({-1, 1}) do
+  for _, zSign in ipairs({-1, 1}) do
+   local x, z = xSign * (width/2 + 12), zSign * (length/2 + 12)
+   part(stadium, "FloodlightPole", Vector3.new(1.4, 28, 1.4), CFrame.new(x, 14, z), Color3.fromRGB(57, 67, 78), Enum.Material.Metal)
+   local rig = part(stadium, "FloodlightRig", Vector3.new(8, 2, 2), CFrame.new(x, 28.5, z), Color3.fromRGB(38, 47, 58), Enum.Material.Metal)
+   for lamp = 1, 4 do
+    local lightPanel = part(stadium, "FloodlightPanel", Vector3.new(1.2, 0.3, 1.5), CFrame.new(x - 3 + lamp * 1.6, 27.9, z - zSign * 0.8), Color3.fromRGB(245, 249, 255), Enum.Material.Neon)
+    lightPanel.CanCollide = false
+   end
+   local flood = Instance.new("SurfaceLight"); flood.Name = "PitchFloodlight"; flood.Face = Enum.NormalId.Bottom; flood.Brightness = 2.5; flood.Range = 48; flood.Angle = 120; flood.Parent = rig
   end
  end
  ball = Instance.new("Part"); ball.Name = "MatchBall"; ball.Shape = Enum.PartType.Ball; ball.Size = Vector3.new(3.2,3.2,3.2); ball.Position = Vector3.new(0,4,0)
@@ -186,7 +221,13 @@ Players.PlayerAdded:Connect(function(player)
 end)
 Players.PlayerRemoving:Connect(function(player) saveProfile(player); profiles[player] = nil; lastKick[player] = nil end)
 for _, player in ipairs(Players:GetPlayers()) do task.spawn(function() loadProfile(player) end) end
-buildStadium(); assignTeams()
+local buildOk, buildError = pcall(buildStadium)
+if not buildOk then
+ warn("[PITCH] Stadium generation failed: " .. tostring(buildError))
+else
+ print("[PITCH] Stadium, goals, and match ball created successfully.")
+end
+assignTeams()
 task.spawn(function()
  while true do
   phase = "KICKOFF"; secondsLeft = Config.IntermissionSeconds; broadcast()
