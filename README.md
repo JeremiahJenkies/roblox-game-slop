@@ -4,7 +4,7 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 
 ## Features in this build
 - Configurable 150 x 240 stud football pitch with mowing stripes, field markings, penalty/goal boxes, goals and nets, stepped grandstands, supports, floodlights, and atmosphere/color grading.
-- Server-owned football with black panel detailing, validated Pass/Shoot/Lob/Clearance actions, range/cooldown checks, speed cap, spherecast anti-tunnelling assistance, stuck/out-of-bounds recovery, moving-player dribble nudges and mathematical goal-plane detection.
+- Server-owned football with black panel detailing, validated Pass/Shoot/Lob/Clearance actions, range/cooldown checks, speed cap, fixed 60 Hz custom-force stepping, air drag, rolling resistance, spin decay, grounded sleep, spherecast anti-tunnelling assistance, stuck/out-of-bounds recovery, moving-player dribble nudges and mathematical goal-plane detection.
 - Match lifecycle: intermission, kick-off, two halves, half-time, full-time, score updates, team-side switching and automatic rematches; configurable throw-in, corner and goal-kick restarts.
 - Server-authoritative sprint and stamina drain/regeneration; clients send intent rather than setting their own movement speed.
 - Cosmetic locker with earnable kits, ball trails and goal effects. Purchases/equipping are validated by the server and never affect competitive stats.
@@ -24,7 +24,7 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 - `src/server/Services/TeamService.lua` — teams, player appearance and spawn placement.
 - `src/server/Services/MatchService.lua` — practice score state and goal rewards.
 - `src/server/Services/BallService.lua` — ball physics, kicks, ball recovery and goal detection.
-- `src/server/DevCommands.server.lua` — Studio-only `/stats` and `/pitch`.
+- `src/server/DevCommands.server.lua` — Studio-only `/stats`, `/pitch`, `/ballreset`, `/ballshoot`, `/ballout` and `/ballinfo`.
 - `src/client/UI/PITCHHUD.client.lua` — score, clock, profile and status HUD.
 - `src/client/UI/CosmeticShop.client.lua` — cosmetic locker interface.
 - `src/client/Controllers/InputController.client.lua` — input controls and local ball shadow.
@@ -41,7 +41,7 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 ## Persistence notes
 - Store name `IceYetiSurvival_v1` and key `player_<UserId>` intentionally remain unchanged.
 - Writes merge new soccer fields into existing records. Old survival `wins`, `bestDay`, `wood`, `stone`, `trophies` and `discoveries` remain separate legacy values.
-- Use a separate published test experience with Studio API access enabled for persistence tests; different experiences do not automatically share DataStores.
+- Use a separate published test experience with Studio API access enabled for persistence tests; different experiences do not automatically share DataStores. Cosmetic purchases use saved in-game credits only; Robux products and ProcessReceipt are not implemented.
 
 ## Test status
 - Repository paths and Rojo mapping have been checked against the project configuration.
