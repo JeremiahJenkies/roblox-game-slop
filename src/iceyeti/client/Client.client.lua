@@ -178,7 +178,7 @@ local staminaText = makeLabel(gui, "StaminaLabel", "STAMINA 100%", UDim2.fromOff
 local stats = Instance.new("Frame")
 stats.Name = "PlayerStats"
 stats.Position = UDim2.new(0, 18, 0, 120)
-stats.Size = UDim2.fromOffset(210, 154)
+stats.Size = UDim2.fromOffset(210, 176)
 stats.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
 stats.BackgroundTransparency = 0.1
 stats.Parent = gui
@@ -189,6 +189,7 @@ local winsLabel = makeLabel(stats, "Wins", "100-DAY WINS  0", UDim2.new(1, -20, 
 local resourcesLabel = makeLabel(stats, "Resources", "WOOD 0   •   STONE 0", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 82), Enum.Font.GothamBold, Color3.fromRGB(155, 221, 190), 12)
 local campFuelLabel = makeLabel(stats, "CampFuel", "CAMPFIRE 100%", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 105), Enum.Font.GothamBold, Color3.fromRGB(255, 164, 93), 12)
 local discoveriesLabel = makeLabel(stats, "Discoveries", "DISCOVERIES 0 / 3", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 127), Enum.Font.GothamBold, Color3.fromRGB(140, 216, 255), 12)
+local progressionLabel = makeLabel(stats, "Progression", "XP 0  •  TROPHIES 0  •  1.0x", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 149), Enum.Font.GothamBold, Color3.fromRGB(232, 211, 255), 11)
 
 local timerBack = Instance.new("Frame")
 timerBack.Name = "TimerBack"
@@ -239,12 +240,16 @@ local function updateStats()
 	winsLabel.Text = "100-DAY WINS  " .. tostring(player:GetAttribute("Wins") or 0)
 	resourcesLabel.Text = "WOOD " .. tostring(player:GetAttribute("Wood") or 0) .. "   •   STONE " .. tostring(player:GetAttribute("Stone") or 0)
 	discoveriesLabel.Text = "DISCOVERIES " .. tostring(player:GetAttribute("Discoveries") or 0) .. " / 3"
+	progressionLabel.Text = "XP " .. tostring(player:GetAttribute("XP") or 0) .. "  •  TROPHIES " .. tostring(player:GetAttribute("Trophies") or 0) .. "  •  " .. string.format("%.2f", tonumber(player:GetAttribute("XPMultiplier")) or 1) .. "x"
 end
 player:GetAttributeChangedSignal("Coins"):Connect(updateStats)
 player:GetAttributeChangedSignal("BestDay"):Connect(updateStats)
 player:GetAttributeChangedSignal("Wins"):Connect(updateStats)
 player:GetAttributeChangedSignal("Wood"):Connect(updateStats)
 player:GetAttributeChangedSignal("Stone"):Connect(updateStats)
+player:GetAttributeChangedSignal("XP"):Connect(updateStats)
+player:GetAttributeChangedSignal("Trophies"):Connect(updateStats)
+player:GetAttributeChangedSignal("XPMultiplier"):Connect(updateStats)
 player:GetAttributeChangedSignal("Stamina"):Connect(function()
 	local stamina = math.clamp(tonumber(player:GetAttribute("Stamina")) or 100, 0, 100)
 	staminaFill.Size = UDim2.fromScale(stamina / 100, 1)
