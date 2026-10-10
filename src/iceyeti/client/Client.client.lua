@@ -8,6 +8,7 @@ local player = Players.LocalPlayer
 local remotes = ReplicatedStorage:WaitForChild("IceYetiRemotes")
 local stateEvent = remotes:WaitForChild("StateUpdate")
 local noticeEvent = remotes:WaitForChild("Notice")
+local flareEvent = remotes:WaitForChild("ThrowFlare")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "IceYetiHUD"
@@ -36,6 +37,8 @@ local function makeLabel(parent, name, text, size, position, font, color, textSi
 	return label
 end
 
+local showNotice
+
 local top = Instance.new("Frame")
 top.Name = "TopBar"
 top.AnchorPoint = Vector2.new(0.5, 0)
@@ -54,6 +57,59 @@ makeLabel(top, "GameTitle", "SURVIVE ICE YETIS", UDim2.new(1, -24, 0, 26), UDim2
 local dayLabel = makeLabel(top, "Day", "DAY 0 / 100", UDim2.new(0.48, 0, 0, 25), UDim2.fromOffset(16, 45), Enum.Font.GothamBold, Color3.fromRGB(245, 245, 250), 15)
 local phaseLabel = makeLabel(top, "Phase", "PREPARING", UDim2.new(0.5, -16, 0, 25), UDim2.new(0.5, 0, 0, 45), Enum.Font.GothamBold, Color3.fromRGB(130, 218, 255), 14)
 phaseLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+
+local flareButton = Instance.new("TextButton")
+flareButton.Name = "ThrowFlare"
+flareButton.AnchorPoint = Vector2.new(1, 0)
+flareButton.Position = UDim2.new(1, -18, 0, 120)
+flareButton.Size = UDim2.fromOffset(170, 48)
+flareButton.BackgroundColor3 = Color3.fromRGB(174, 66, 42)
+flareButton.Text = "✦  THROW FLARE"
+flareButton.TextColor3 = Color3.fromRGB(255, 242, 225)
+flareButton.Font = Enum.Font.GothamBlack
+flareButton.TextSize = 13
+flareButton.Parent = gui
+rounded(flareButton, 12)
+local flareStroke = Instance.new("UIStroke")
+flareStroke.Color = Color3.fromRGB(255, 157, 87)
+flareStroke.Transparency = 0.2
+flareStroke.Parent = flareButton
+
+local function nearestYeti()
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local world = workspace:FindFirstChild("IceYetiWorld")
+	local folder = world and world:FindFirstChild("Yetis")
+	if not root or not folder then return nil end
+	local selected, selectedDistance
+	for _, model in ipairs(folder:GetChildren()) do
+		if model:IsA("Model") and model:GetAttribute("IsIceYeti") then
+			local yetiRoot = model:FindFirstChild("HumanoidRootPart")
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			if yetiRoot and humanoid and humanoid.Health > 0 then
+				local distance = (yetiRoot.Position - root.Position).Magnitude
+				if distance <= 90 and (not selectedDistance or distance < selectedDistance) then
+					selected, selectedDistance = model, distance
+				end
+			end
+		end
+	end
+	return selected, selectedDistance
+end
+
+flareButton.Activated:Connect(function()
+	local target, distance = nearestYeti()
+	if not target then
+		showNotice("No Ice Yeti in flare range. Keep moving!")
+		return
+	end
+	flareEvent:FireServer(target)
+	flareButton.Text = "FLARE THROWN"
+	task.delay(0.65, function()
+		if flareButton.Parent then flareButton.Text = "✦  THROW FLARE" end
+	end)
+end)
 
 local stats = Instance.new("Frame")
 stats.Name = "PlayerStats"
@@ -100,7 +156,7 @@ notice.TextColor3 = Color3.fromRGB(255, 167, 116)
 notice.Parent = gui
 rounded(notice, 12)
 
-local function showNotice(message)
+showNotice = function(message)
 	notice.Text = tostring(message)
 	TweenService:Create(notice, TweenInfo.new(0.2), {BackgroundTransparency = 0.08, TextTransparency = 0}):Play()
 	task.delay(3.5, function()
