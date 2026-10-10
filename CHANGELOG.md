@@ -1,6 +1,8 @@
 # Changelog
 
 ## 2026-10-10 — Match systems, stamina and cosmetics
+- Added fixed 60 Hz custom-force stepping for air drag, ground rolling resistance, sliding friction, spin decay, angular-speed caps and grounded sleep handling.
+- Added Studio-only ball test commands: `/ballreset`, `/ballshoot`, `/ballout` and `/ballinfo`.
 - Reworked match lifecycle around intermission, kick-off, timed halves, half-time, full-time and automatic rematches.
 - Added duplicate-goal protection, goal/restart countdown alignment, match participation/win/draw/loss rewards, and half-time team-side switching.
 - Added server-authoritative sprint requests, stamina drain/regeneration and a client stamina meter; client no longer sets its own WalkSpeed.
