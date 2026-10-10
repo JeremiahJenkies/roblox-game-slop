@@ -161,6 +161,7 @@ local function startMatch()
     state.half = 1
     state.matchClock = 0
     goalIds[state.matchNumber] = nil
+    TeamService.ResetEnds()
     resetBall()
     setRestart("KICKOFF", "Red", "Match " .. tostring(state.matchNumber) .. " — kick-off!")
 end
