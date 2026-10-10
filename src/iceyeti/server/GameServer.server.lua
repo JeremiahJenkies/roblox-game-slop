@@ -8,6 +8,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local EnemySpawner = require(script.Parent:WaitForChild("EnemySpawner"))
+local ProgressionService = require(script.Parent:WaitForChild("ProgressionService"))
 
 -- DataStores are unavailable in unpublished places or when Studio API access is disabled.
 -- Never let that stop the remotes and core game from starting.
@@ -628,13 +629,13 @@ local function buildWorld()
 end
 
 local function defaultProfile()
-	return {coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0, discoveries = {}}
+	return {dataVersion = ProgressionService.DataVersion, coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0, xp = 0, trophies = 0, discoveries = {}}
 end
 
 saveProfile = function(player)
 	local data = profiles[player]
 	if not data or not store then return end
-	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone, discoveries = data.discoveries or {}}
+	local payload = {dataVersion = ProgressionService.DataVersion, coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone, xp = data.xp or 0, trophies = data.trophies or 0, discoveries = data.discoveries or {}}
 	local ok, err = pcall(function()
 		store:UpdateAsync("player_" .. player.UserId, function()
 			return payload
@@ -657,6 +658,9 @@ local function loadProfile(player)
 		data.wins = math.max(0, tonumber(saved.wins) or 0)
 		data.wood = math.max(0, tonumber(saved.wood) or 0)
 		data.stone = math.max(0, tonumber(saved.stone) or 0)
+		data.xp = math.max(0, math.floor(tonumber(saved.xp) or 0))
+		data.trophies = math.max(0, math.floor(tonumber(saved.trophies) or 0))
+		data.dataVersion = ProgressionService.DataVersion
 		if type(saved.discoveries) == "table" then
 			data.discoveries = {
 				Cabin = saved.discoveries.Cabin == true,
@@ -673,6 +677,9 @@ local function loadProfile(player)
 	player:SetAttribute("Wins", data.wins)
 	player:SetAttribute("Wood", data.wood)
 	player:SetAttribute("Stone", data.stone)
+	player:SetAttribute("XP", data.xp or 0)
+	player:SetAttribute("Trophies", data.trophies or 0)
+	player:SetAttribute("XPMultiplier", ProgressionService.GetMultiplier(data.trophies))
 	player:SetAttribute("Discoveries", (data.discoveries.Cabin and 1 or 0) + (data.discoveries.Tower and 1 or 0) + (data.discoveries.Cave and 1 or 0))
 end
 
@@ -941,11 +948,16 @@ local function awardSurvival(day)
 		local profile = profiles[player]
 		if profile then
 			local reward = Config.BaseReward + day * Config.RewardPerDay
+			local earnedXP, trophiesEarned, multiplier = ProgressionService.ApplySurvivalReward(profile, day)
 			profile.coins += reward
 			profile.bestDay = math.max(profile.bestDay, day)
 			player:SetAttribute("Coins", profile.coins)
 			player:SetAttribute("BestDay", profile.bestDay)
-			noticeEvent:FireClient(player, "Survived day " .. day .. "! +" .. reward .. " coins")
+			player:SetAttribute("XP", profile.xp)
+			player:SetAttribute("Trophies", profile.trophies)
+			player:SetAttribute("XPMultiplier", ProgressionService.GetMultiplier(profile.trophies))
+			local extra = trophiesEarned > 0 and (" | +" .. trophiesEarned .. " trophy") or ""
+			noticeEvent:FireClient(player, "Survived night " .. day .. "! +" .. reward .. " coins, +" .. earnedXP .. " XP (" .. string.format("%.2f", multiplier) .. "x)" .. extra)
 			task.spawn(saveProfile, player)
 		end
 	end
