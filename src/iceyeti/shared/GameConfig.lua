@@ -1,31 +1,16 @@
--- Shared configuration for Survive Ice Yetis For 100 Days.
+-- Shared configuration for the competitive soccer game.
 local Config = {}
-
-Config.GameName = "Survive 99 Nights in the Forest"
-Config.TargetDays = 99
-Config.DayLengthSeconds = 75
+Config.GameName = "PITCH: Competitive Soccer"
+Config.FieldWidth = 180
+Config.FieldLength = 280
+Config.MatchLengthSeconds = 180
 Config.IntermissionSeconds = 12
-Config.BaseYetiHealth = 100
-Config.HealthPerDay = 12
-Config.BaseYetiDamage = 12
-Config.DamagePerDay = 1
-Config.BaseYetiSpeed = 10
-Config.SpeedPerTenDays = 0.5
-Config.AttackRange = 5
-Config.AttackCooldown = 1.7
-Config.BaseReward = 10
-Config.RewardPerDay = 2
-Config.DataStoreName = "IceYetiSurvival_v1"
+Config.KickCooldown = 0.45
+Config.KickRange = 13
+Config.KickPower = 82
+Config.KickLift = 13
+Config.DataStoreName = "IceYetiSurvival_v1" -- Kept intentionally to preserve existing player records.
 Config.AutoSaveSeconds = 60
-Config.BloodMoonEveryDays = 5
+Config.WalkSpeed = 18
 Config.SprintSpeed = 23
-Config.WalkSpeed = 16
-Config.MaxStamina = 100
-Config.StaminaDrainPerQuarterSecond = 2.5
-Config.StaminaRegenPerQuarterSecond = 1.5
-Config.CacheCoins = 12
-Config.MedicCost = 20
-Config.SnowParticleRate = 32
-Config.TrailLanternCount = 9
-
 return Config
