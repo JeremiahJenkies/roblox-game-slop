@@ -30,11 +30,11 @@ local function part(parent, name, size, cf, color, material, transparency)
  p.BottomSurface = Enum.SurfaceType.Smooth; p.Transparency = transparency or 0; p.Parent = parent; return p
 end
 local function profileDefaults()
- return {dataVersion = 3, coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0, xp = 0, trophies = 0, discoveries = {}, goals = 0, assists = 0, matches = 0, cleanSheets = 0}
+ return {dataVersion = 3, coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0, xp = 0, trophies = 0, discoveries = {}, goals = 0, assists = 0, matches = 0, cleanSheets = 0, soccerWins = 0}
 end
 local function saveProfile(player)
  local data = profiles[player]; if not data or not store then return end
- local payload = {dataVersion = 3, coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone, xp = data.xp, trophies = data.trophies, discoveries = data.discoveries, goals = data.goals, assists = data.assists, matches = data.matches, cleanSheets = data.cleanSheets}
+ local payload = {dataVersion = 3, coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone, xp = data.xp, trophies = data.trophies, discoveries = data.discoveries, goals = data.goals, assists = data.assists, matches = data.matches, cleanSheets = data.cleanSheets, soccerWins = data.soccerWins}
  local ok, err = pcall(function() store:UpdateAsync("player_" .. player.UserId, function(old)
   -- Merge into the existing record so legacy and unknown fields are not discarded.
   old = type(old) == "table" and old or {}
@@ -44,7 +44,7 @@ local function saveProfile(player)
  if not ok then warn("[Soccer] Save failed for " .. player.Name .. ": " .. tostring(err)) end
 end
 local function setProfileAttributes(player, data)
- for _, key in ipairs({"coins", "wins", "goals", "assists", "matches", "cleanSheets", "xp", "trophies"}) do
+ for _, key in ipairs({"coins", "wins", "goals", "assists", "matches", "cleanSheets", "soccerWins", "xp", "trophies"}) do
   local attr = key:sub(1,1):upper() .. key:sub(2); player:SetAttribute(attr, tonumber(data[key]) or 0)
  end
 end
@@ -52,7 +52,7 @@ local function loadProfile(player)
  local data = profileDefaults(); local ok, saved = false, nil
  if store then ok, saved = pcall(function() return store:GetAsync("player_" .. player.UserId) end) end
  if ok and type(saved) == "table" then
-  for _, key in ipairs({"coins", "bestDay", "wins", "wood", "stone", "xp", "trophies", "goals", "assists", "matches", "cleanSheets"}) do
+  for _, key in ipairs({"coins", "bestDay", "wins", "wood", "stone", "xp", "trophies", "goals", "assists", "matches", "cleanSheets", "soccerWins"}) do
    data[key] = math.max(0, math.floor(tonumber(saved[key]) or 0))
   end
   if type(saved.discoveries) == "table" then data.discoveries = saved.discoveries end
@@ -171,7 +171,7 @@ local function finishMatch()
   if data then
    data.matches += 1
    local team = player:GetAttribute("Team")
-   if team and teamScores[team] > teamScores[team == "Red" and "Blue" or "Red"] then data.wins += 1; data.coins += 25; notify(player, "Full time — your team won! +25 credits")
+   if team and teamScores[team] > teamScores[team == "Red" and "Blue" or "Red"] then data.soccerWins += 1; data.coins += 25; notify(player, "Full time — your team won! +25 credits")
    elseif teamScores.Red == teamScores.Blue then data.coins += 10; notify(player, "Full time — draw! +10 credits")
    else notify(player, "Full time — good match. Keep practising!") end
    setProfileAttributes(player, data); task.spawn(saveProfile, player)
