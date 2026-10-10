@@ -164,7 +164,6 @@ function PitchService.Build()
     centreSpot.Shape = Enum.PartType.Ball; centreSpot.CanCollide = false
 
     local function drawBox(name: string, sign: number, boxWidth: number, depth: number)
-        local edgeZ = sign * halfLength
         local innerZ = sign * (halfLength - depth)
         flatLine(stadium, name .. "Inner", Vector3.new(boxWidth, 0, PitchConfig.LineThickness), 0, innerZ, lineColor)
         flatLine(stadium, name .. "Left", Vector3.new(PitchConfig.LineThickness, 0, depth), -boxWidth / 2, sign * (halfLength - depth / 2), lineColor)
@@ -175,7 +174,7 @@ function PitchService.Build()
             spot.Shape = Enum.PartType.Ball; spot.CanCollide = false
             arc(stadium, "PenaltyArc", 0, spotZ, PitchConfig.PenaltyArcRadius, sign == 1 and 205 or 25, sign == 1 and 335 or 155, PitchConfig.PenaltyArcSegments, lineColor)
         end
-        return edgeZ
+        return
     end
     drawBox("PenaltyArea", -1, PitchConfig.PenaltyAreaWidth, PitchConfig.PenaltyAreaDepth)
     drawBox("PenaltyArea", 1, PitchConfig.PenaltyAreaWidth, PitchConfig.PenaltyAreaDepth)
