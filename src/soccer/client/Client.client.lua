@@ -51,9 +51,9 @@ end)
 local function updatePlayerStats()
  local team = player:GetAttribute("Team") or "ASSIGNING"
  teamLabel.Text = "TEAM: " .. string.upper(team); teamLabel.TextColor3 = team == "Red" and red or (team == "Blue" and blue or white)
- statsLabel.Text = "W " .. tostring(player:GetAttribute("Wins") or 0) .. "   G " .. tostring(player:GetAttribute("Goals") or 0) .. "   MATCHES " .. tostring(player:GetAttribute("Matches") or 0)
+ statsLabel.Text = "W " .. tostring(player:GetAttribute("SoccerWins") or 0) .. "   G " .. tostring(player:GetAttribute("Goals") or 0) .. "   MATCHES " .. tostring(player:GetAttribute("Matches") or 0)
 end
-for _, attr in ipairs({"Team","Wins","Goals","Matches"}) do player:GetAttributeChangedSignal(attr):Connect(updatePlayerStats) end
+for _, attr in ipairs({"Team","SoccerWins","Goals","Matches"}) do player:GetAttributeChangedSignal(attr):Connect(updatePlayerStats) end
 updatePlayerStats()
 stateEvent.OnClientEvent:Connect(function(state)
  if type(state) ~= "table" then return end
