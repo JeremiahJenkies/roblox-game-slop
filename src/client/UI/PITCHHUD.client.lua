@@ -67,7 +67,7 @@ topStroke.Color = Color3.fromRGB(107, 134, 153)
 topStroke.Transparency = 0.45
 topStroke.Parent = top
 label(top, "Title", "P I T C H", UDim2.new(1, 0, 0, 25), UDim2.fromOffset(0, 4), 22, COLORS.Text, Enum.Font.GothamBlack)
-label(top, "Subtitle", "COMPETITIVE SOCCER  /  PRACTICE MODE", UDim2.new(1, 0, 0, 13), UDim2.fromOffset(0, 30), 9, COLORS.Muted)
+label(top, "Subtitle", "COMPETITIVE SOCCER  /  LIVE MATCH", UDim2.new(1, 0, 0, 13), UDim2.fromOffset(0, 30), 9, COLORS.Muted)
 local redScoreLabel = label(top, "RedScore", "RED  0", UDim2.new(0.25, 0, 0, 23), UDim2.new(0.12, 0, 0, 44), 16, COLORS.Red, Enum.Font.GothamBlack)
 local scoreSeparator = label(top, "ScoreSeparator", "—", UDim2.new(0.1, 0, 0, 23), UDim2.new(0.45, 0, 0, 44), 16, COLORS.Text, Enum.Font.GothamBlack)
 local blueScoreLabel = label(top, "BlueScore", "0  BLUE", UDim2.new(0.25, 0, 0, 23), UDim2.new(0.63, 0, 0, 44), 16, COLORS.Blue, Enum.Font.GothamBlack)
