@@ -124,6 +124,7 @@ function BallService.PlaceForRestart(position: Vector3)
     currentBall:SetAttribute("PreviousTouchedByUserId", 0)
     currentBall:SetAttribute("LastTouchedTeam", "")
     currentBall:SetAttribute("PreviousTouchedTeam", "")
+    currentBall:SetAttribute("PossessorUserId", 0)
     previousPosition = currentBall.Position
     lastMovedAt = os.clock()
     pcall(function() currentBall:SetNetworkOwner(nil) end)
@@ -470,7 +471,9 @@ function BallService.Init()
                     end
                 end
                 if chosenPlayer then
-                    recordTouch(chosenPlayer)
+                    if currentBall:GetAttribute("LastTouchedByUserId") ~= chosenPlayer.UserId then
+                        recordTouch(chosenPlayer)
+                    end
                     currentBall:SetAttribute("PossessorUserId", chosenPlayer.UserId)
                 end
             end
