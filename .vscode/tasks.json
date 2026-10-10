@@ -2,47 +2,29 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Ice Yeti: Sync latest GitHub changes",
+      "label": "PITCH: Sync latest GitHub changes",
       "type": "shell",
       "command": "git pull --ff-only origin main",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
+      "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
     },
     {
-      "label": "Ice Yeti: Start Rojo",
+      "label": "PITCH: Start Rojo",
       "type": "shell",
       "command": "rojo serve default.project.json",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
+      "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": false
-      }
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": false }
     },
     {
-      "label": "Ice Yeti: Check project files",
+      "label": "PITCH: Check project files",
       "type": "shell",
       "command": "git status --short && rojo --version",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
+      "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": [],
-      "presentation": {
-        "reveal": "always",
-        "panel": "dedicated",
-        "clear": true
-      }
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
     }
   ]
 }
