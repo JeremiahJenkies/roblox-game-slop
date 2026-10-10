@@ -2,7 +2,6 @@
 -- Spawn point attributes override defaults; template attributes override type definitions.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
-local ServerStorage = game:GetService("ServerStorage")
 
 local EnemyConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("EnemyConfig"))
 
@@ -123,7 +122,7 @@ end
 function Spawner.HasConfiguredSpawnPoints()
 	local folder = Workspace:FindFirstChild(EnemyConfig.SpawnFolderName)
 	if not folder then return false end
-	for _, point in ipairs(folder:GetDescendants()) do
+	for _, point in ipairs(folder:GetChildren()) do
 		if (point:IsA("BasePart") or point:IsA("Model")) and point:GetAttribute("SpawnEnabled") ~= false then
 			if typeof(point:GetAttribute("EnemyType")) == "string" then return true end
 		end
