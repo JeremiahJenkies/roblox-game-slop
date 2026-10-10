@@ -16,6 +16,10 @@ stateEvent.Parent = remotes
 local noticeEvent = remotes:FindFirstChild("Notice") or Instance.new("RemoteEvent")
 noticeEvent.Name = "Notice"
 noticeEvent.Parent = remotes
+local flareEvent = remotes:FindFirstChild("ThrowFlare") or Instance.new("RemoteEvent")
+flareEvent.Name = "ThrowFlare"
+flareEvent.Parent = remotes
+local lastFlareAt = {}
 
 local currentDay = 0
 local phase = "Preparing"
@@ -190,16 +194,16 @@ local function spawnYeti(day, spawnPosition)
 	model.Name = "IceYeti_Day" .. day
 	model:SetAttribute("IsIceYeti", true)
 	model.Parent = yetisFolder
-	local root = makePart(model, "HumanoidRootPart", Vector3.new(4, 5, 3), CFrame.new(spawnPosition + Vector3.new(0, 4, 0)), Color3.fromRGB(160, 220, 238), Enum.Material.Ice, false)
+	local root = makePart(model, "HumanoidRootPart", Vector3.new(4, 5, 3), CFrame.new(spawnPosition + Vector3.new(0, 4, 0)), Color3.fromRGB(160, 220, 238), Enum.Material.Ice, true)
 	root.Shape = Enum.PartType.Block
 	root.CustomPhysicalProperties = PhysicalProperties.new(1, 0.5, 0, 1, 1)
-	local body = makePart(model, "YetiBody", Vector3.new(6, 6, 4), root.CFrame * CFrame.new(0, 0.5, 0), Color3.fromRGB(208, 233, 242), Enum.Material.Snow, false)
+	local body = makePart(model, "YetiBody", Vector3.new(6, 6, 4), root.CFrame * CFrame.new(0, 0.5, 0), Color3.fromRGB(208, 233, 242), Enum.Material.Snow, true)
 	body.CanCollide = false
-	local head = makePart(model, "YetiHead", Vector3.new(4, 3.5, 3.5), root.CFrame * CFrame.new(0, 4, -0.4), Color3.fromRGB(224, 243, 248), Enum.Material.Snow, false)
+	local head = makePart(model, "YetiHead", Vector3.new(4, 3.5, 3.5), root.CFrame * CFrame.new(0, 4, -0.4), Color3.fromRGB(224, 243, 248), Enum.Material.Snow, true)
 	head.CanCollide = false
-	local eye1 = makePart(model, "EyeLeft", Vector3.new(0.45, 0.45, 0.2), head.CFrame * CFrame.new(-0.8, 0.2, -1.7), Color3.fromRGB(255, 70, 50), Enum.Material.Neon, false)
+	local eye1 = makePart(model, "EyeLeft", Vector3.new(0.45, 0.45, 0.2), head.CFrame * CFrame.new(-0.8, 0.2, -1.7), Color3.fromRGB(255, 70, 50), Enum.Material.Neon, true)
 	eye1.CanCollide = false
-	local eye2 = makePart(model, "EyeRight", Vector3.new(0.45, 0.45, 0.2), head.CFrame * CFrame.new(0.8, 0.2, -1.7), Color3.fromRGB(255, 70, 50), Enum.Material.Neon, false)
+	local eye2 = makePart(model, "EyeRight", Vector3.new(0.45, 0.45, 0.2), head.CFrame * CFrame.new(0.8, 0.2, -1.7), Color3.fromRGB(255, 70, 50), Enum.Material.Neon, true)
 	eye2.CanCollide = false
 	local weldRoot = Instance.new("WeldConstraint")
 	weldRoot.Part0 = root; weldRoot.Part1 = body; weldRoot.Parent = root
@@ -243,7 +247,12 @@ local function spawnYeti(day, spawnPosition)
 			if target then
 				local targetRoot = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
 				if targetRoot then
-					humanoid:MoveTo(targetRoot.Position)
+					local offset = targetRoot.Position - root.Position
+					local flatOffset = Vector3.new(offset.X, 0, offset.Z)
+					if flatOffset.Magnitude > 2 then
+						local step = math.min(flatOffset.Magnitude, humanoid.WalkSpeed * 0.35)
+						model:PivotTo(model:GetPivot() + flatOffset.Unit * step)
+					end
 					if dist <= Config.AttackRange and os.clock() - lastAttack >= Config.AttackCooldown then
 						lastAttack = os.clock()
 						local targetHumanoid = target.Character and target.Character:FindFirstChildOfClass("Humanoid")
@@ -252,14 +261,38 @@ local function spawnYeti(day, spawnPosition)
 						end
 					end
 				end
-			else
-				humanoid:MoveTo(root.Position)
 			end
 			task.wait(0.35)
 		end
 	end)
 	return model
 end
+
+
+flareEvent.OnServerEvent:Connect(function(player, target)
+	if typeof(target) ~= "Instance" or not target:IsA("Model") then return end
+	if not target:GetAttribute("IsIceYeti") or not yetisFolder or not target:IsDescendantOf(yetisFolder) then return end
+	local now = os.clock()
+	if lastFlareAt[player] and now - lastFlareAt[player] < 1.1 then return end
+	local character = player.Character
+	local playerRoot = character and character:FindFirstChild("HumanoidRootPart")
+	local playerHumanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local targetRoot = target:FindFirstChild("HumanoidRootPart")
+	local targetHumanoid = target:FindFirstChildOfClass("Humanoid")
+	if not playerRoot or not playerHumanoid or playerHumanoid.Health <= 0 or not targetRoot or not targetHumanoid or targetHumanoid.Health <= 0 then return end
+	if (playerRoot.Position - targetRoot.Position).Magnitude > 90 then
+		noticeEvent:FireClient(player, "That Yeti is too far away!")
+		return
+	end
+	lastFlareAt[player] = now
+	target:SetAttribute("LastHitUserId", player.UserId)
+	targetHumanoid:TakeDamage(35)
+	noticeEvent:FireClient(player, "Flare hit! The Yeti has " .. math.max(0, math.floor(targetHumanoid.Health)) .. " health left.")
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	lastFlareAt[player] = nil
+end)
 
 local function onCharacter(player, character)
 	local humanoid = character:WaitForChild("Humanoid", 10)
