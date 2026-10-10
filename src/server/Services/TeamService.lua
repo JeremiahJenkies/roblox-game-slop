@@ -34,8 +34,11 @@ end
 
 function TeamService.Assign(player: Player)
     if not teamA or not teamB then return end
+    local redTeam = teamA
+    local blueTeam = teamB
+    if not redTeam or not blueTeam then return end
     local aCount, bCount = countTeams()
-    local selected = aCount <= bCount and teamA or teamB
+    local selected: Team = aCount <= bCount and redTeam or blueTeam
     player.Team = selected
     player:SetAttribute("Team", selected.Name)
     player.Neutral = false
@@ -50,7 +53,7 @@ function TeamService.PlaceCharacter(player: Player, character: Model)
     local spawnName = teamName == "Red" and "TeamASpawn" or "TeamBSpawn"
     local spawnPart = stadium and stadium:FindFirstChild(spawnName)
     if spawnPart and spawnPart:IsA("BasePart") and character.Parent then
-        local randomOffset = Vector3.new(math.random(-5, 5), PlayerConfig.CharacterSpawnHeight, math.random(-5, 5))
+        local randomOffset = Vector3.new(math.random(-PlayerConfig.SpawnRandomOffset, PlayerConfig.SpawnRandomOffset), PlayerConfig.CharacterSpawnHeight, math.random(-PlayerConfig.SpawnRandomOffset, PlayerConfig.SpawnRandomOffset))
         character:PivotTo(spawnPart.CFrame + randomOffset)
     end
     local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -62,10 +65,11 @@ function TeamService.PlaceCharacter(player: Player, character: Model)
 end
 
 local function setupPlayer(player: Player)
-    if player.Team ~= teamA and player.Team ~= teamB then
+    local currentTeam = player.Team
+    if currentTeam ~= teamA and currentTeam ~= teamB then
         TeamService.Assign(player)
-    else
-        player:SetAttribute("Team", player.Team.Name)
+    elseif currentTeam then
+        player:SetAttribute("Team", currentTeam.Name)
         player.Neutral = false
     end
     player.CharacterAdded:Connect(function(character)
