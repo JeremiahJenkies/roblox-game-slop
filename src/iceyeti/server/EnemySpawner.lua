@@ -124,7 +124,8 @@ function Spawner.HasConfiguredSpawnPoints()
 	if not folder then return false end
 	for _, point in ipairs(folder:GetChildren()) do
 		if (point:IsA("BasePart") or point:IsA("Model")) and point:GetAttribute("SpawnEnabled") ~= false then
-			if typeof(point:GetAttribute("EnemyType")) == "string" then return true end
+			local enemyType = point:GetAttribute("EnemyType")
+			if typeof(enemyType) == "string" and findTemplate(enemyType) then return true end
 		end
 	end
 	return false
