@@ -3,6 +3,8 @@
 All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
 ## 2026-10-10 — Playable soccer practice build
+- Added a sprint toggle using Shift on keyboard and a large SPRINT button on touch devices; uses configured walk/sprint speeds.
+- Reworked pass, shoot and lob controls into larger high-contrast mobile buttons while retaining Q/E/F keyboard shortcuts; standard Roblox movement controls remain enabled.
 - Made the goal side and rear nets collidable so the ball is contained instead of passing through the netting.
 - Added server-owned football, panel visuals, validated Pass/Shoot/Lob/Clearance requests, kick range/cooldown checks, speed cap, anti-tunnelling, stuck-ball recovery, moving-player dribble nudges and goal-plane scoring.
 - Added practice score registration and server-side goal/assist XP awards.
