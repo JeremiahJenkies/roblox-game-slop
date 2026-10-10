@@ -44,6 +44,7 @@ local yetisFolder
 local lobbySpawn
 local campFuel = 100
 local campfireFlame
+local saveProfile
 
 local function broadcast()
 	stateEvent:FireAllClients({
