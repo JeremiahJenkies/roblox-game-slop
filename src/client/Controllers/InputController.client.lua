@@ -78,6 +78,7 @@ local right = isTouch and 18 or 18
 local shootButton = addButton("ShootButton", "SHOOT", isTouch and "POWER" or "[E]", UDim2.new(1, -right, 1, -bottom), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(27, 132, 79))
 local lobButton = addButton("LobButton", "LOB", isTouch and "HIGH" or "[F]", UDim2.new(1, -right, 1, -(bottom + actionHeight + actionGap)), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(96, 83, 160))
 local passButton = addButton("PassButton", "PASS", isTouch and "TEAMMATE" or "[Q]", UDim2.new(1, -right, 1, -(bottom + (actionHeight + actionGap) * 2)), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(43, 105, 159))
+local tackleButton = addButton("TackleButton", "TACKLE", isTouch and "STEAL BALL" or "[C]", UDim2.new(1, -right, 1, -(bottom + (actionHeight + actionGap) * 3)), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(185, 63, 55))
 local sprintButton = addButton("SprintButton", "SPRINT", isTouch and "TAP TO TOGGLE" or "[SHIFT]", UDim2.new(0, isTouch and 158 or 18, 1, -(isTouch and 138 or 20)), UDim2.fromOffset(isTouch and 132 or 106, isTouch and 62 or 48), Color3.fromRGB(183, 116, 35))
 sprintButton.AnchorPoint = Vector2.new(0, 1)
 local staminaPanel = Instance.new("Frame")
@@ -245,6 +246,7 @@ local function kick(action: string)
 end
 
 passButton.Activated:Connect(function() kick("Pass") end)
+tackleButton.Activated:Connect(function() actionRemote:FireServer("Tackle") end)
 shootButton.Activated:Connect(function() kick("Shoot") end)
 lobButton.Activated:Connect(function() kick("Lob") end)
 
@@ -259,6 +261,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
         kick("Pass")
     elseif input.KeyCode == Enum.KeyCode.F then
         kick("Lob")
+    elseif input.KeyCode == Enum.KeyCode.C then
+        actionRemote:FireServer("Tackle")
     end
 end)
 
@@ -309,4 +313,4 @@ Workspace:GetAttributeChangedSignal("BallReady"):Connect(function()
     lobButton.Active = ready
 end)
 
-print("[PITCH] Player controls ready: sprint, dribbling, adjustable pass/shot/lob power and mobile action buttons.")
+print("[PITCH] Player controls ready: sprint, close-control dribbling, tackling, adjustable pass/shot/lob power and mobile action buttons.")
