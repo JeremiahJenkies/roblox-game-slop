@@ -29,6 +29,9 @@
         },
         "Controllers": {
           "$path": "src/client/Controllers"
+        },
+        "HalloweenMainMenu": {
+          "$path": "src/client/HalloweenMainMenu.client.lua"
         }
       }
     }
