@@ -114,6 +114,78 @@ local function updateStamina()
 end
 player:GetAttributeChangedSignal("Stamina"):Connect(updateStamina)
 updateStamina()
+
+-- Adjustable kick strength, shared by pass, shot and lob controls.
+local kickPower = 0.75
+local powerPanel = Instance.new("Frame")
+powerPanel.Name = "KickPowerControl"
+powerPanel.AnchorPoint = Vector2.new(0.5, 1)
+powerPanel.Position = UDim2.new(0.5, 0, 1, -(isTouch and 28 or 20))
+powerPanel.Size = UDim2.fromOffset(isTouch and 260 or 300, 68)
+powerPanel.BackgroundColor3 = Color3.fromRGB(15, 25, 32)
+powerPanel.BackgroundTransparency = 0.08
+powerPanel.Parent = gui
+round(powerPanel, 12)
+local powerLabel = Instance.new("TextLabel")
+powerLabel.BackgroundTransparency = 1
+powerLabel.Position = UDim2.fromOffset(10, 3)
+powerLabel.Size = UDim2.new(1, -20, 0, 23)
+powerLabel.Font = Enum.Font.GothamBlack
+powerLabel.TextSize = 12
+powerLabel.TextColor3 = Color3.new(1, 1, 1)
+powerLabel.Text = "KICK POWER 75%"
+powerLabel.Parent = powerPanel
+local powerTrack = Instance.new("TextButton")
+powerTrack.Name = "PowerTrack"
+powerTrack.Position = UDim2.fromOffset(14, 34)
+powerTrack.Size = UDim2.new(1, -28, 0, 20)
+powerTrack.BackgroundColor3 = Color3.fromRGB(49, 63, 75)
+powerTrack.Text = ""
+powerTrack.AutoButtonColor = false
+powerTrack.Parent = powerPanel
+round(powerTrack, 8)
+local powerFill = Instance.new("Frame")
+powerFill.Name = "Fill"
+powerFill.Size = UDim2.fromScale((kickPower - 0.2) / 0.8, 1)
+powerFill.BackgroundColor3 = Color3.fromRGB(255, 177, 71)
+powerFill.BorderSizePixel = 0
+powerFill.Parent = powerTrack
+round(powerFill, 8)
+local powerKnob = Instance.new("Frame")
+powerKnob.Name = "Knob"
+powerKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+powerKnob.Position = UDim2.new((kickPower - 0.2) / 0.8, 0, 0.5, 0)
+powerKnob.Size = UDim2.fromOffset(14, 26)
+powerKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+powerKnob.BorderSizePixel = 0
+powerKnob.Parent = powerTrack
+round(powerKnob, 7)
+local draggingPower = false
+local function setKickPowerFromX(screenX: number)
+    local width = math.max(1, powerTrack.AbsoluteSize.X)
+    local fraction = math.clamp((screenX - powerTrack.AbsolutePosition.X) / width, 0, 1)
+    kickPower = math.floor((0.2 + fraction * 0.8) * 100 + 0.5) / 100
+    local visualFraction = (kickPower - 0.2) / 0.8
+    powerFill.Size = UDim2.fromScale(visualFraction, 1)
+    powerKnob.Position = UDim2.new(visualFraction, 0, 0.5, 0)
+    powerLabel.Text = "KICK POWER " .. tostring(math.floor(kickPower * 100 + 0.5)) .. "%"
+end
+powerTrack.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingPower = true
+        setKickPowerFromX(input.Position.X)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if draggingPower and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        setKickPowerFromX(input.Position.X)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingPower = false
+    end
+end)
 local sprinting = false
 local humanoid: Humanoid? = nil
 
@@ -155,8 +227,7 @@ local function kick(action: string)
         direction = target - origin
     end
     if direction.Magnitude < 0.05 then return end
-    local power = action == "Pass" and 0.72 or (action == "Lob" and 0.82 or 0.9)
-    kickRemote:FireServer(action, direction.Unit, power)
+    kickRemote:FireServer(action, direction.Unit, kickPower)
 end
 
 passButton.Activated:Connect(function() kick("Pass") end)
@@ -224,4 +295,4 @@ Workspace:GetAttributeChangedSignal("BallReady"):Connect(function()
     lobButton.Active = ready
 end)
 
-print("[PITCH] Player controls ready: default movement, sprint, pass, shoot, lob and mobile action buttons.")
+print("[PITCH] Player controls ready: sprint, dribbling, adjustable pass/shot/lob power and mobile action buttons.")
