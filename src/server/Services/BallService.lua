@@ -236,7 +236,7 @@ local function pointAtGoalPlane(previous: Vector3, current: Vector3, lineZ: numb
     local accepted = MatchService.RegisterGoal(scoringTeam, scorerId, assistId)
     if accepted then
         notifyAll("GOAL! " .. scoringTeam .. " scores!")
-        task.delay(5, function()
+        task.delay(MatchConfig.GoalResetSeconds, function()
             BallService.ResetBall()
             goalLocked = false
         end)
