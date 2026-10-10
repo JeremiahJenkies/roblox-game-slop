@@ -9,6 +9,8 @@ local remotes = ReplicatedStorage:WaitForChild("IceYetiRemotes")
 local stateEvent = remotes:WaitForChild("StateUpdate")
 local noticeEvent = remotes:WaitForChild("Notice")
 local flareEvent = remotes:WaitForChild("ThrowFlare")
+local sprintEvent = remotes:WaitForChild("Sprint")
+local UserInputService = game:GetService("UserInputService")
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "IceYetiHUD"
@@ -60,6 +62,42 @@ phaseLabel.TextXAlignment = Enum.TextXAlignment.Right
 local eventLabel = makeLabel(top, "Event", "FOREST WATCH", UDim2.new(1, -24, 0, 16), UDim2.fromOffset(16, 69), Enum.Font.GothamBold, Color3.fromRGB(178, 203, 157), 10)
 eventLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+
+local sprintButton = Instance.new("TextButton")
+sprintButton.Name = "SprintButton"
+sprintButton.AnchorPoint = Vector2.new(1, 0)
+sprintButton.Position = UDim2.new(1, -18, 0, 176)
+sprintButton.Size = UDim2.fromOffset(170, 42)
+sprintButton.BackgroundColor3 = Color3.fromRGB(52, 84, 67)
+sprintButton.Text = "⇧  SPRINT"
+sprintButton.TextColor3 = Color3.fromRGB(234, 255, 235)
+sprintButton.Font = Enum.Font.GothamBlack
+sprintButton.TextSize = 13
+sprintButton.Parent = gui
+rounded(sprintButton, 12)
+
+local sprintHeld = false
+local function setSprinting(enabled)
+	if sprintHeld == enabled then return end
+	sprintHeld = enabled
+	sprintEvent:FireServer(enabled)
+	sprintButton.Text = enabled and "SPRINTING..." or "⇧  SPRINT"
+	sprintButton.BackgroundColor3 = enabled and Color3.fromRGB(89, 112, 67) or Color3.fromRGB(52, 84, 67)
+end
+sprintButton.Activated:Connect(function()
+	setSprinting(not sprintHeld)
+end)
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+		setSprinting(true)
+	end
+end)
+UserInputService.InputEnded:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.LeftShift or input.KeyCode == Enum.KeyCode.RightShift then
+		setSprinting(false)
+	end
+end)
 
 local flareButton = Instance.new("TextButton")
 flareButton.Name = "ThrowFlare"
@@ -120,6 +158,22 @@ flareButton.Activated:Connect(function()
 		end
 	end)
 end)
+
+local staminaBack = Instance.new("Frame")
+staminaBack.Name = "StaminaBack"
+staminaBack.AnchorPoint = Vector2.new(0, 1)
+staminaBack.Position = UDim2.new(0, 18, 1, -57)
+staminaBack.Size = UDim2.fromOffset(210, 12)
+staminaBack.BackgroundColor3 = Color3.fromRGB(24, 32, 24)
+staminaBack.Parent = gui
+rounded(staminaBack, 6)
+local staminaFill = Instance.new("Frame")
+staminaFill.Name = "Fill"
+staminaFill.Size = UDim2.fromScale(1, 1)
+staminaFill.BackgroundColor3 = Color3.fromRGB(113, 215, 143)
+staminaFill.Parent = staminaBack
+rounded(staminaFill, 6)
+local staminaText = makeLabel(gui, "StaminaLabel", "STAMINA 100%", UDim2.fromOffset(210, 18), UDim2.new(0, 18, 1, -79), Enum.Font.GothamBold, Color3.fromRGB(192, 239, 202), 10)
 
 local stats = Instance.new("Frame")
 stats.Name = "PlayerStats"
@@ -189,6 +243,13 @@ player:GetAttributeChangedSignal("BestDay"):Connect(updateStats)
 player:GetAttributeChangedSignal("Wins"):Connect(updateStats)
 player:GetAttributeChangedSignal("Wood"):Connect(updateStats)
 player:GetAttributeChangedSignal("Stone"):Connect(updateStats)
+player:GetAttributeChangedSignal("Stamina"):Connect(function()
+	local stamina = math.clamp(tonumber(player:GetAttribute("Stamina")) or 100, 0, 100)
+	staminaFill.Size = UDim2.fromScale(stamina / 100, 1)
+	staminaFill.BackgroundColor3 = stamina <= 20 and Color3.fromRGB(255, 105, 96) or Color3.fromRGB(113, 215, 143)
+	staminaText.Text = "STAMINA " .. stamina .. "%"
+	if stamina <= 0 and sprintHeld then setSprinting(false) end
+end)
 updateStats()
 
 stateEvent.OnClientEvent:Connect(function(state)
@@ -212,6 +273,9 @@ stateEvent.OnClientEvent:Connect(function(state)
 	campFuelLabel.TextColor3 = fuel > 35 and Color3.fromRGB(255, 164, 93) or Color3.fromRGB(255, 91, 91)
 end)
 noticeEvent.OnClientEvent:Connect(showNotice)
+player.CharacterAdded:Connect(function()
+	setSprinting(false)
+end)
 
 -- Client-side finishing pass: restrained post-processing keeps the scene moody without heavy blur.
 local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere") or Instance.new("Atmosphere")
