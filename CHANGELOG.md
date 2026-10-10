@@ -2,17 +2,17 @@
 
 All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
-## 2026-10-10 — Playable practice mode
-- Added a server-owned football with black panel details, validated Pass/Shoot/Lob/Clearance actions, cooldown and distance checks, speed limiting, anti-tunnelling, stuck/out-of-bounds recovery, moving-player dribble nudges, and goal-plane scoring.
-- Added a score registration method for practice mode and server-side player Goal/Assist XP awards.
-- Mapped the new client input controller; included Q/E/F controls, mobile buttons and local ball shadow.
-- Updated the HUD to clear old interface instances and display the practice score plus stadium/ball readiness.
-- Added server-bootstrap cleanup for stale legacy Yeti/monolithic soccer server folders and cleaned old HUD/local script instances.
-- Improved player presentation by removing large legacy accessories/tools from the foundation character and applying Red/Blue torso colours.
-- Repository-level checks only; Studio playtest still required.
+## 2026-10-10 — Playable soccer practice build
+- Added server-owned football, panel visuals, validated Pass/Shoot/Lob/Clearance requests, kick range/cooldown checks, speed cap, anti-tunnelling, stuck-ball recovery, moving-player dribble nudges and goal-plane scoring.
+- Added practice score registration and server-side goal/assist XP awards.
+- Mapped the client input controller with Q/E/F actions, on-screen touch buttons and local ball shadow.
+- Cleaned stale previous HUDs and added ball/stadium readiness display.
+- Added cleanup for stale Yeti/monolithic soccer server folders; simplified avatar appearance for team readability.
+- Updated documentation to describe the current playable practice mode.
+- Repository-level checks passed; a Roblox Studio playtest is still required.
 
-## 2026-10-10 — Milestone 1 foundation
-- Added modular services, config modules, centralized RemoteEvents, Maid and Signal utilities.
-- Added generated soccer pitch, goals/nets, stepped grandstands, supports, floodlights, spawn markers and team-side placement.
-- Preserved existing DataStore name/key layout and merged player profile writes with UpdateAsync.
-- Removed the restricted runtime attempt to set Lighting.Technology; set it manually in Studio if desired.
+## 2026-10-10 — Modular foundation
+- Added modular service bootstrap, shared configuration, centralized remotes, Maid and Signal utilities.
+- Added configurable pitch, lines, goals/nets, stepped stands, floodlights, spawn markers and Red/Blue team placement.
+- Preserved the existing DataStore name/key format and merged profile writes with UpdateAsync.
+- Removed the restricted runtime assignment to Lighting.Technology.
