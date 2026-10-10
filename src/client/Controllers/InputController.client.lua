@@ -80,6 +80,40 @@ local lobButton = addButton("LobButton", "LOB", isTouch and "HIGH" or "[F]", UDi
 local passButton = addButton("PassButton", "PASS", isTouch and "TEAMMATE" or "[Q]", UDim2.new(1, -right, 1, -(bottom + (actionHeight + actionGap) * 2)), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(43, 105, 159))
 local sprintButton = addButton("SprintButton", "SPRINT", isTouch and "TAP TO TOGGLE" or "[SHIFT]", UDim2.new(0, isTouch and 158 or 18, 1, -(isTouch and 138 or 20)), UDim2.fromOffset(isTouch and 132 or 106, isTouch and 62 or 48), Color3.fromRGB(183, 116, 35))
 sprintButton.AnchorPoint = Vector2.new(0, 1)
+local staminaPanel = Instance.new("Frame")
+staminaPanel.Name = "StaminaMeter"
+staminaPanel.AnchorPoint = Vector2.new(0, 1)
+staminaPanel.Position = UDim2.new(0, 18, 1, -(isTouch and 210 or 78))
+staminaPanel.Size = UDim2.fromOffset(isTouch and 250 or 210, 24)
+staminaPanel.BackgroundColor3 = Color3.fromRGB(15, 25, 32)
+staminaPanel.BackgroundTransparency = 0.12
+staminaPanel.Parent = gui
+round(staminaPanel, 8)
+local staminaFill = Instance.new("Frame")
+staminaFill.Name = "Fill"
+staminaFill.Size = UDim2.fromScale(1, 1)
+staminaFill.BackgroundColor3 = Color3.fromRGB(77, 210, 139)
+staminaFill.BorderSizePixel = 0
+staminaFill.Parent = staminaPanel
+round(staminaFill, 8)
+local staminaText = Instance.new("TextLabel")
+staminaText.Name = "Label"
+staminaText.BackgroundTransparency = 1
+staminaText.Size = UDim2.fromScale(1, 1)
+staminaText.Font = Enum.Font.GothamBold
+staminaText.TextSize = 11
+staminaText.TextColor3 = Color3.new(1, 1, 1)
+staminaText.Text = "STAMINA 100%"
+staminaText.ZIndex = 2
+staminaText.Parent = staminaPanel
+local function updateStamina()
+    local amount = math.clamp(tonumber(player:GetAttribute("Stamina")) or 100, 0, 100)
+    staminaFill.Size = UDim2.fromScale(amount / 100, 1)
+    staminaText.Text = "STAMINA " .. tostring(math.floor(amount)) .. "%"
+    staminaFill.BackgroundColor3 = amount < 25 and Color3.fromRGB(232, 92, 82) or Color3.fromRGB(77, 210, 139)
+end
+player:GetAttributeChangedSignal("Stamina"):Connect(updateStamina)
+updateStamina()
 local sprinting = false
 local humanoid: Humanoid? = nil
 
