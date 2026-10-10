@@ -1,101 +1,39 @@
-# Survive Ice Yetis For 100 Days 🎃❄️
+# PITCH — Competitive Soccer ⚽
 
-A multiplayer Roblox survival horror prototype built with Luau and Rojo. The current seasonal look is Halloween in a frozen haunted forest.
+A multiplayer Roblox soccer prototype built with Luau and Rojo. It generates a stadium at runtime, uses server-validated kicks and server-owned ball physics, tracks goals and match results, and saves player progression.
 
-## Gameplay
-- Survive escalating Ice Yeti hunts across 100 in-game days.
-- A short camp intermission separates hunts.
-- Server-spawned Ice Yetis chase nearby living players and attack at close range, with visible overhead health bars.
-- Every fifth hunt is a Blood Moon: crimson fog, an extra Yeti, and increased Yeti damage.
-- The server autosaves player profiles periodically while they play.
-- The camp workbench lets the team build one shared shelter from gathered wood and stone.
-- Explore the forest to search eight supply caches; each player can claim each cache once per day.
-- Discover an abandoned cabin, Frostwatch Tower, and glowing Frost Cave; each discovery grants a one-time reward saved to the player profile.
-- Track recorded discoveries in the HUD; discovery progress persists across sessions without changing existing player IDs or DataStore keys.
-- Sprint with Shift on PC or the on-screen sprint control, using server-managed stamina.
-- Spend coins at the camp medic to restore health between hunts.
-- Player profile writes use UpdateAsync, following Roblox Creator Hub data-store guidance.
-- Earn coins for surviving a day and defeating a Yeti.
-- Persistent player coins, best day, and 100-day victories via DataStore.
-- Cinematic moonlit lighting, volumetric-style atmosphere, stars, cloud cover, restrained bloom, colour grading and distant fog.
-- Ambient snowfall, campfire embers and smoke, glowing trail lanterns, glassy ice shards, an illuminated watchtower, and an abandoned cabin with searchable rewards.
-- Visual effects are intentionally restrained and use a single large snowfall emitter volume to help protect performance.
+## Current gameplay
+- A generated full-size green pitch with mowing stripes, touchlines, halfway line, penalty areas, goals, netting, and grandstands.
+- Balanced Red and Blue team assignment.
+- Match intermission, 3-minute live match, scoreboard, and full-time rewards.
+- Kick with **E** on keyboard or the on-screen **KICK** button on touch devices. On PC, aim using the mouse.
+- The server validates kick distance, direction, cooldown, match phase, and goal scoring.
+- Persistent player wins, goals, assists, matches, clean sheets, and credits are displayed/saved where implemented.
+- Future-friendly Rojo layout with shared configuration, server gameplay, and client HUD.
 
 ## Project structure
-- `src/iceyeti/shared/GameConfig.lua` — shared game tuning.
-- `src/iceyeti/server/GameServer.server.lua` — world, server-authoritative rounds, AI, rewards, persistence.
-- `src/iceyeti/shared/EnemyConfig.lua` — default enemy stats and Common/Elite/Ancient definitions.
-- `src/iceyeti/server/EnemySpawner.lua` — server-only, attribute-driven template spawning.
-- `src/iceyeti/client/Client.client.lua` — HUD and notices.
+- `src/soccer/shared/GameConfig.lua` — pitch, match, kick, and persistence configuration.
+- `src/soccer/server/GameServer.server.lua` — stadium generation, teams, ball physics, scoring, match loop, and saves.
+- `src/soccer/client/Client.client.lua` — scoreboard, team card, notifications, and kick controls.
 - `default.project.json` — Rojo mapping.
 
-The previous prototype's scripts are left in the repository for reference, but the Rojo project mapping excludes them, including the old BossService-dependent game. They will not be inserted into this new place.
-
 ## Run locally
-1. Open the repository folder in VS Code.
-2. Run `git pull origin main`.
-3. Start Rojo with `rojo serve default.project.json` and leave the terminal open.
-4. In Roblox Studio, create/open a new Baseplate place and connect the Rojo plugin to the local server.
-5. Wait for sync, then press **Play**.
-6. Use **Test → Start** with 2 players to check multiplayer.
-7. For persistence tests, publish a separate test experience and enable **Game Settings → Security → Enable Studio Access to API Services**. Avoid testing against production player data.
+1. Open this existing repository in VS Code.
+2. Run `git pull --ff-only origin main` (or use **Terminal → Run Task → PITCH: Sync latest GitHub changes**).
+3. If a Rojo server is already running for this folder, keep using it; otherwise run **Terminal → Run Task → PITCH: Start Rojo**.
+4. In Roblox Studio, open the place you want to use and connect the Rojo plugin to `127.0.0.1:34872` if that is the port shown by the running server.
+5. Wait for sync, then press **Play**. Use **Test → Start** with 2 or more players to test teams and goals.
+6. Publish a separate test experience and enable **Game Settings → Security → Enable Studio Access to API Services** before testing persistence. Do not test against production data.
 
-## Forest exploration landmarks
+## Save-data compatibility
+- The game intentionally keeps the existing DataStore name `IceYetiSurvival_v1` and key format `player_<UserId>`.
+- Existing fields (`coins`, `bestDay`, `wins`, `wood`, `stone`, `xp`, `trophies`, `discoveries`, `dataVersion`) are retained when loaded and written back; new soccer stats are added.
+- Writes merge the soccer payload into the previous record with `UpdateAsync`, so unrecognised fields are not discarded.
+- `wins` is now also used for soccer match wins. Historic `bestDay`, resource counts, XP, trophies, and discoveries are retained as legacy data, even though the soccer HUD does not display them.
+- Test with a separate test experience first. Roblox DataStores are scoped to an experience, and this code cannot transfer records between different experiences automatically.
 
-Three handcrafted low-part-count landmarks are generated into `Workspace.IceYetiWorld`:
-
-- **Abandoned Cabin** — warm lantern marker, weathered timber structure, and a one-time discovery reward.
-- **Frostwatch Tower** — elevated wooden lookout with a blue beacon.
-- **Frost Cave** — clustered ice-rock entrance with a glowing cave marker.
-
-Use the ProximityPrompt at each glowing marker to record the discovery. Each discovery can only reward a player once and is saved as the optional `discoveries` field in the existing `IceYetiSurvival_v1` profile. Existing profile fields and `player_<UserId>` keys are preserved. The HUD displays progress from 0/3 to 3/3. These structures are generated by the server, so they do not require manual Studio placement.
-
-## Attribute-driven enemy templates
-
-The original generated Ice Yeti wave remains the default. To use configurable rig templates, add at least one spawn point to `Workspace/EnemySpawnPoints`; once configured, the server uses these points for the day’s spawn pass.
-
-1. In `ReplicatedStorage`, create a Folder named `EnemyTemplates`.
-2. Put rig Models directly inside it, named to match their `EnemyType` value (for example `Common`, `Elite`, or `Ancient`). R6 and R15 rigs are supported when they contain a `Humanoid` and a `HumanoidRootPart`. Set the rig's PrimaryPart to its root if it is not set automatically.
-3. In `Workspace`, create a Folder named `EnemySpawnPoints`.
-4. Add Parts or Models directly inside that folder. Select each spawn point, open **Properties → Attributes → Add Attribute**, and add:
-   - `EnemyType` (String): `Common`, `Elite`, or `Ancient`, matching a Model name in `EnemyTemplates`.
-   - `SpawnCount` (Number): number of copies for that point, clamped to 1–100.
-   - `SpawnEnabled` (Boolean): whether the point is active.
-   - `MinDay` (Number): first day it can spawn.
-   - `MaxDay` (Number): last day it can spawn.
-5. Optionally add these Attributes to each template Model: `Level`, `Damage`, `MaxHealth`, and `MoveSpeed`. The spawner applies resolved values to the cloned Model and its Humanoid.
-
-### Example enemy definitions
-
-| Template name | Level | Damage | MaxHealth | MoveSpeed |
-|---|---:|---:|---:|---:|
-| `Common` | 1 | 10 | 100 | 12 |
-| `Elite` | 5 | 20 | 250 | 14 |
-| `Ancient` | 10 | 35 | 600 | 16 |
-
-### Attribute precedence and validation
-
-- For enemy stats: **template Model Attribute → named type definition in `EnemyConfig.lua` → default value**.
-- For spawn-point settings: **spawn-point Attribute → default in `EnemyConfig.lua`**.
-- Missing attributes use defaults. Invalid numeric values fall back to defaults and are clamped to safe ranges.
-- A missing or invalid rig template is skipped with a warning; it does not stop the rest of the server script.
-- Spawn passes are guarded per day to prevent duplicate waves. The guard is reset during the next camp phase.
-- Enemy spawning and stat assignment are server-side; no client RemoteEvent can request arbitrary spawns or change enemy attributes.
-- The spawner validates and places the rig, but does not yet attach the existing custom Yeti chase/attack AI to arbitrary R6/R15 templates. If you switch to template spawn points, test this in Studio and add an AI adapter before treating those rigs as fully equivalent to the original generated Yetis.
-
-### Studio test checklist
-
-- [ ] A valid R6 rig spawns at a configured Part spawn point.
-- [ ] A valid R15 rig spawns at a configured Model spawn point.
-- [ ] `SpawnCount` creates the expected number of clones.
-- [ ] `MinDay` and `MaxDay` include/exclude the expected days.
-- [ ] `SpawnEnabled = false` prevents spawning.
-- [ ] A missing template logs a warning and does not crash the round loop.
-- [ ] Repeated calls during one day do not create duplicate waves.
-- [ ] Verify that existing profiles, coins, resources, best day, wins, and DataStore key `IceYetiSurvival_v1` remain unchanged.
-
-## Notes
-- This is a playable starter prototype, not a fully balanced campaign yet.
-- The world and blocky Ice Yetis are generated at runtime by the server.
-- DataStore access is protected with `pcall`; without API access, the game can still start but saves will warn in Output.
-- No old BossService is used by this new game.
+## Known prototype limitations
+- This is the first playable soccer foundation, not a finished competitive release. Test ball collisions, goal detection, player team balancing, mobile controls, and DataStore behavior in Studio.
+- Assists and clean sheets are saved/displayed as stats fields but are not yet awarded by gameplay logic.
+- Character animations, goalkeeper logic, fouls, ranked matchmaking, latency compensation, and custom player rigs are not included yet.
+- No live Roblox Studio test has been run from this environment.
