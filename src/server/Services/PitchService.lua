@@ -155,10 +155,10 @@ function PitchService.Build()
 
     -- Core field markings.
     flatLine(stadium, "TouchlineWest", Vector3.new(PitchConfig.LineThickness, 0, length), -halfWidth, 0, lineColor)
-    flatLine(stadium, "TouchlineEast", Vector3.new(0.35, 0, length), halfWidth, 0, lineColor)
+    flatLine(stadium, "TouchlineEast", Vector3.new(PitchConfig.LineThickness, 0, length), halfWidth, 0, lineColor)
     flatLine(stadium, "GoalLineNorth", Vector3.new(width, 0, PitchConfig.LineThickness), 0, -halfLength, lineColor)
-    flatLine(stadium, "GoalLineSouth", Vector3.new(width, 0, 0.35), 0, halfLength, lineColor)
-    flatLine(stadium, "HalfwayLine", Vector3.new(width, 0, 0.35), 0, 0, lineColor)
+    flatLine(stadium, "GoalLineSouth", Vector3.new(width, 0, PitchConfig.LineThickness), 0, halfLength, lineColor)
+    flatLine(stadium, "HalfwayLine", Vector3.new(width, 0, PitchConfig.LineThickness), 0, 0, lineColor)
     arc(stadium, "CentreCircle", 0, 0, PitchConfig.CentreCircleRadius, 0, 360, PitchConfig.CentreCircleSegments, lineColor)
     local centreSpot = makePart(stadium, "CentreSpot", Vector3.new(PitchConfig.CentreSpotRadius * 2, PitchConfig.SpotThickness, PitchConfig.CentreSpotRadius * 2), CFrame.new(0, PitchConfig.SpotCenterY, 0), lineColor, Enum.Material.SmoothPlastic)
     centreSpot.Shape = Enum.PartType.Ball; centreSpot.CanCollide = false
@@ -168,7 +168,7 @@ function PitchService.Build()
         local innerZ = sign * (halfLength - depth)
         flatLine(stadium, name .. "Inner", Vector3.new(boxWidth, 0, PitchConfig.LineThickness), 0, innerZ, lineColor)
         flatLine(stadium, name .. "Left", Vector3.new(PitchConfig.LineThickness, 0, depth), -boxWidth / 2, sign * (halfLength - depth / 2), lineColor)
-        flatLine(stadium, name .. "Right", Vector3.new(0.3, 0, depth), boxWidth / 2, sign * (halfLength - depth / 2), lineColor)
+        flatLine(stadium, name .. "Right", Vector3.new(PitchConfig.LineThickness, 0, depth), boxWidth / 2, sign * (halfLength - depth / 2), lineColor)
         local spotZ = sign * (halfLength - PitchConfig.PenaltySpotDepth)
         if name == "PenaltyArea" then
             local spot = makePart(stadium, "PenaltySpot", Vector3.new(PitchConfig.PenaltySpotRadius * 2, PitchConfig.SpotThickness, PitchConfig.PenaltySpotRadius * 2), CFrame.new(0, PitchConfig.SpotCenterY, spotZ), lineColor, Enum.Material.SmoothPlastic)
