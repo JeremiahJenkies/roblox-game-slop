@@ -209,24 +209,46 @@ function PitchService.Build()
     end
 
     if PitchConfig.DecorativePartsEnabled then
+        -- Long-side stands are built as actual stepped seating, not a solid block that hides its rows.
         for _, side in ipairs({-1, 1}) do
-            local x = side * (halfWidth + PitchConfig.StandOffset)
-            makePart(stadium, "LongGrandstand", Vector3.new(PitchConfig.StandSideDepth, PitchConfig.StandHeight, length + PitchConfig.StandLengthExtension), CFrame.new(x, PitchConfig.StandHeight / 2, 0), Color3.fromRGB(48, 59, 72), Enum.Material.Metal)
             for row = 1, PitchConfig.StandRows do
-                local seats = makePart(stadium, "StandTier", Vector3.new(PitchConfig.StandSideDepth, PitchConfig.StandRowThickness, length + PitchConfig.StandSeatLengthExtension), CFrame.new(x, row * PitchConfig.StandRowSpacing, 0), row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139), Enum.Material.Metal)
+                local x = side * (halfWidth + PitchConfig.StandFirstRowOffset + (row - 1) * PitchConfig.StandHorizontalSpacing)
+                local rowY = row * PitchConfig.StandVerticalSpacing
+                local rowColor = row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139)
+                local seats = makePart(stadium, "StandTier", Vector3.new(PitchConfig.StandRowDepth, PitchConfig.StandRowThickness, length + PitchConfig.StandEndOverhang), CFrame.new(x, rowY, 0), rowColor, Enum.Material.Metal)
                 seats.CastShadow = true
+                local supportHeight = math.max(0.1, rowY - (PitchConfig.SurfaceCenterY + PitchConfig.SurfaceThickness / 2))
+                for _, zSign in ipairs({-1, 1}) do
+                    local supportZ = zSign * (halfLength + PitchConfig.StandEndOverhang / 2 - 4)
+                    makePart(stadium, "StandTierSupport", Vector3.new(PitchConfig.StandSupportThickness, supportHeight, PitchConfig.StandSupportThickness), CFrame.new(x, PitchConfig.SurfaceCenterY + PitchConfig.SurfaceThickness / 2 + supportHeight / 2, supportZ), Color3.fromRGB(53, 65, 76), Enum.Material.Metal)
+                end
             end
+            local lastRowX = halfWidth + PitchConfig.StandFirstRowOffset + (PitchConfig.StandRows - 1) * PitchConfig.StandHorizontalSpacing
+            local backWallX = side * (lastRowX + PitchConfig.StandRowDepth / 2 + 3)
+            local wallHeight = PitchConfig.StandRows * PitchConfig.StandVerticalSpacing + 2
+            makePart(stadium, "StandBackWall", Vector3.new(PitchConfig.StandSupportThickness, wallHeight, length + PitchConfig.StandEndOverhang), CFrame.new(backWallX, wallHeight / 2, 0), Color3.fromRGB(42, 52, 63), Enum.Material.Metal)
         end
+        -- End stands step away from the goal nets and include visible support posts.
+        local endStandWidth = width - PitchConfig.EndStandWidthInset
         for _, sign in ipairs({-1, 1}) do
-            local z = sign * (halfLength + PitchConfig.EndStandZOffset)
-            makePart(stadium, "EndGrandstand", Vector3.new(width / 2 + 8, PitchConfig.EndStandHeight, 14), CFrame.new(0, PitchConfig.EndStandHeight / 2, z), Color3.fromRGB(48, 59, 72), Enum.Material.Metal)
             for row = 1, PitchConfig.EndStandRows do
-                makePart(stadium, "EndStandTier", Vector3.new(width / 2 + 4, 1, 14), CFrame.new(0, row * PitchConfig.EndStandRowSpacing, z), row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139), Enum.Material.Metal)
+                local z = sign * (halfLength + PitchConfig.EndStandFirstRowOffset + (row - 1) * PitchConfig.EndStandZSpacing)
+                local rowY = row * PitchConfig.EndStandVerticalSpacing
+                local rowColor = row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139)
+                makePart(stadium, "EndStandTier", Vector3.new(endStandWidth, PitchConfig.EndStandRowThickness, PitchConfig.EndStandRowDepth), CFrame.new(0, rowY, z), rowColor, Enum.Material.Metal)
+                local supportHeight = math.max(0.1, rowY - (PitchConfig.SurfaceCenterY + PitchConfig.SurfaceThickness / 2))
+                for _, xSign in ipairs({-1, 1}) do
+                    local supportX = xSign * (endStandWidth / 2 - PitchConfig.EndStandSupportInset)
+                    makePart(stadium, "EndStandTierSupport", Vector3.new(PitchConfig.StandSupportThickness, supportHeight, PitchConfig.StandSupportThickness), CFrame.new(supportX, PitchConfig.SurfaceCenterY + PitchConfig.SurfaceThickness / 2 + supportHeight / 2, z), Color3.fromRGB(53, 65, 76), Enum.Material.Metal)
+                end
             end
+            local backWallZ = sign * (halfLength + PitchConfig.EndStandBackwallOffset)
+            local wallHeight = PitchConfig.EndStandRows * PitchConfig.EndStandVerticalSpacing + 2
+            makePart(stadium, "EndStandBackWall", Vector3.new(endStandWidth, wallHeight, PitchConfig.StandSupportThickness), CFrame.new(0, wallHeight / 2, backWallZ), Color3.fromRGB(42, 52, 63), Enum.Material.Metal)
         end
         for _, xSign in ipairs({-1, 1}) do
             for _, zSign in ipairs({-1, 1}) do
-                local x = xSign * (halfWidth + 12)
+                local x = xSign * (halfWidth + PitchConfig.StandOffset + 8)
                 local z = zSign * (halfLength + 8)
                 makePart(stadium, "FloodlightPole", Vector3.new(1.4, PitchConfig.FloodlightHeight, 1.4), CFrame.new(x, PitchConfig.FloodlightHeight / 2, z), Color3.fromRGB(55, 66, 78), Enum.Material.Metal)
                 local rig = makePart(stadium, "FloodlightRig", Vector3.new(PitchConfig.FloodlightWidth, 1.2, PitchConfig.FloodlightDepth), CFrame.new(x, PitchConfig.FloodlightHeight, z), Color3.fromRGB(43, 52, 63), Enum.Material.Metal)
