@@ -106,6 +106,7 @@ function MatchService.RegisterGoal(scoringTeam: string, scorerUserId: any, assis
     setPhase("KICKOFF", MatchConfig.GoalResetSeconds, "GOAL! " .. scoringTeam .. " scores. Kick-off to " .. state.restartTeam .. "!")
     task.delay(MatchConfig.GoalResetSeconds, function()
         if token ~= transitionId or state.phase ~= "KICKOFF" then return end
+        goalIds[matchNumber] = nil
         setRestart("KICKOFF", state.restartTeam, "Kick-off!")
     end)
     return true
