@@ -27,6 +27,7 @@ local lastTackleAt: {[Player]: number} = {}
 local radius = BallConfig.Radius
 local physicsAccumulator = 0
 local slowGroundSince: number? = nil
+local releasePossession: () -> ()
 local physicsRayParams = RaycastParams.new()
 physicsRayParams.FilterType = Enum.RaycastFilterType.Exclude
 physicsRayParams.IgnoreWater = true
@@ -167,7 +168,7 @@ local function createBall()
     print("[BallService] Server-owned football created at kickoff.")
 end
 
-local function releasePossession()
+releasePossession = function()
     local currentBall = ball
     if not currentBall then return end
     local align = currentBall:FindFirstChild("PITCHPossessionAlign")
