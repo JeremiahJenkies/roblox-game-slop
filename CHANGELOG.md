@@ -2,15 +2,17 @@
 
 All dates use ISO format (YYYY-MM-DD). Newest entries first.
 
-## 2026-10-10 — Milestone 1: modular soccer foundation
+## 2026-10-10 — Playable practice mode
+- Added a server-owned football with black panel details, validated Pass/Shoot/Lob/Clearance actions, cooldown and distance checks, speed limiting, anti-tunnelling, stuck/out-of-bounds recovery, moving-player dribble nudges, and goal-plane scoring.
+- Added a score registration method for practice mode and server-side player Goal/Assist XP awards.
+- Mapped the new client input controller; included Q/E/F controls, mobile buttons and local ball shadow.
+- Updated the HUD to clear old interface instances and display the practice score plus stadium/ball readiness.
+- Added server-bootstrap cleanup for stale legacy Yeti/monolithic soccer server folders and cleaned old HUD/local script instances.
+- Improved player presentation by removing large legacy accessories/tools from the foundation character and applying Red/Blue torso colours.
+- Repository-level checks only; Studio playtest still required.
 
-- Added a fixed-order server bootstrap, service modules, centralized RemoteEvent creation, Maid and Signal utilities, and a foundation HUD.
-- Added centralized pitch, ball, player, match and reward configuration modules.
-- Improved stand rendering with stepped seating rows and visible supports; cleaned per-player connections with Maid and guarded profile loads against duplicate/late completion.
-- Added a generated 150 x 240 stud football pitch with field markings, goals/nets, Red/Blue spawn markers, stands, floodlights, ambient lighting effects, and invisible outer boundaries.
-- Added balanced team assignment and team-side respawn placement.
-- Added profile template for Coins, XP, Level, Wins, Losses, Goals, Assists, Saves, MatchesPlayed, equipped cosmetics, and Owned.
-- Kept DataStore `IceYetiSurvival_v1` and `player_<UserId>` keys; data loading reconciles old lowercase fields and saves merge into existing records, retaining legacy survival fields.
-- Added Studio-only `/stats` and `/pitch` commands.
-- Removed the superseded monolithic soccer scripts from the repository source tree; Rojo now maps the modular `src/shared`, `src/server/Services`, and `src/client/UI` implementation.
-- Validation so far is repository-level only. Milestone 1 acceptance tests must be run in Studio before implementing Milestone 2 ball physics.
+## 2026-10-10 — Milestone 1 foundation
+- Added modular services, config modules, centralized RemoteEvents, Maid and Signal utilities.
+- Added generated soccer pitch, goals/nets, stepped grandstands, supports, floodlights, spawn markers and team-side placement.
+- Preserved existing DataStore name/key layout and merged player profile writes with UpdateAsync.
+- Removed the restricted runtime attempt to set Lighting.Technology; set it manually in Studio if desired.
