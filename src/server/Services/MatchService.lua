@@ -8,6 +8,7 @@ local MatchConfig = require(Shared:WaitForChild("Config"):WaitForChild("MatchCon
 local PitchConfig = require(Shared:WaitForChild("Config"):WaitForChild("PitchConfig"))
 local RewardsConfig = require(Shared:WaitForChild("Config"):WaitForChild("RewardsConfig"))
 local DataService = require(script.Parent:WaitForChild("DataService"))
+local TeamService = require(script.Parent:WaitForChild("TeamService"))
 
 local MatchService = {}
 local state: {[string]: any} = {
@@ -167,6 +168,7 @@ end
 local function beginSecondHalf()
     state.half = 2
     state.matchClock = 0
+    TeamService.SwitchEnds()
     resetBall()
     setRestart("KICKOFF", "Blue", "Second half — kick-off!")
 end
@@ -212,7 +214,7 @@ function MatchService.Init()
                         awardMatchResults()
                         task.delay(MatchConfig.IntermissionSeconds, function()
                             if token == transitionId and state.phase == "FULL_TIME" then
-                                setPhase("INTERMISSION", MatchConfig.IntermissionSeconds, "Next match loading.")
+                                startMatch()
                             end
                         end)
                     end
