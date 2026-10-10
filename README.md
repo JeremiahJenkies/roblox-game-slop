@@ -5,7 +5,10 @@ A multiplayer Roblox survival horror prototype built with Luau and Rojo. The cur
 ## Gameplay
 - Survive escalating Ice Yeti hunts across 100 in-game days.
 - A short camp intermission separates hunts.
-- Server-spawned Ice Yetis chase nearby living players and attack at close range.
+- Server-spawned Ice Yetis chase nearby living players and attack at close range, with visible overhead health bars.
+- Every fifth hunt is a Blood Moon: crimson fog, an extra Yeti, and increased Yeti damage.
+- The server autosaves player profiles periodically while they play.
+- The camp workbench lets the team build one shared shelter from gathered wood and stone.
 - Earn coins for surviving a day and defeating a Yeti.
 - Persistent player coins, best day, and 100-day victories via DataStore.
 - Halloween atmosphere: fog, frosted dead pines, glowing pumpkins, icy shards, and a warm campfire.
