@@ -83,6 +83,14 @@ local feintButton = addButton("FeintButton", "FEINT", isTouch and "SIDE TOUCH" o
 feintButton.AnchorPoint = Vector2.new(0, 1)
 local stepOverButton = addButton("StepOverButton", "STEP OVER", isTouch and "SKILL MOVE" or "[X]", UDim2.new(0, isTouch and 138 or 120, 1, -(isTouch and 286 or 132)), UDim2.fromOffset(isTouch and 118 or 104, isTouch and 54 or 44), Color3.fromRGB(224, 105, 38))
 stepOverButton.AnchorPoint = Vector2.new(0, 1)
+local knockOnButton = addButton("KnockOnButton", "KNOCK ON", isTouch and "BURST" or "[V]", UDim2.new(0, isTouch and 18 or 18, 1, -(isTouch and 350 or 180)), UDim2.fromOffset(isTouch and 112 or 94, isTouch and 50 or 42), Color3.fromRGB(40, 155, 100))
+knockOnButton.AnchorPoint = Vector2.new(0, 1)
+local dragBackButton = addButton("DragBackButton", "DRAG BACK", isTouch and "PULL" or "[B]", UDim2.new(0, isTouch and 138 or 120, 1, -(isTouch and 350 or 180)), UDim2.fromOffset(isTouch and 118 or 104, isTouch and 50 or 42), Color3.fromRGB(48, 118, 188))
+dragBackButton.AnchorPoint = Vector2.new(0, 1)
+local quickTurnButton = addButton("QuickTurnButton", "QUICK TURN", isTouch and "CUT" or "[G]", UDim2.new(0, isTouch and 18 or 18, 1, -(isTouch and 408 or 226)), UDim2.fromOffset(isTouch and 112 or 94, isTouch and 50 or 42), Color3.fromRGB(177, 91, 49))
+quickTurnButton.AnchorPoint = Vector2.new(0, 1)
+local shieldButton = addButton("ShieldButton", "SHIELD", isTouch and "HOLD UP" or "[H]", UDim2.new(0, isTouch and 138 or 120, 1, -(isTouch and 408 or 226)), UDim2.fromOffset(isTouch and 118 or 104, isTouch and 50 or 42), Color3.fromRGB(90, 90, 110))
+shieldButton.AnchorPoint = Vector2.new(0, 1)
 local sprintButton = addButton("SprintButton", "SPRINT", isTouch and "TAP TO TOGGLE" or "[SHIFT]", UDim2.new(0, isTouch and 158 or 18, 1, -(isTouch and 138 or 20)), UDim2.fromOffset(isTouch and 132 or 106, isTouch and 62 or 48), Color3.fromRGB(183, 116, 35))
 sprintButton.AnchorPoint = Vector2.new(0, 1)
 local staminaPanel = Instance.new("Frame")
@@ -252,6 +260,10 @@ end
 passButton.Activated:Connect(function() kick("Pass") end)
 tackleButton.Activated:Connect(function() actionRemote:FireServer("Tackle") end)
 feintButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "Feint") end)
+knockOnButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "KnockOn") end)
+dragBackButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "DragBack") end)
+quickTurnButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "QuickTurn") end)
+shieldButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "Shield") end)
 stepOverButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "StepOver") end)
 shootButton.Activated:Connect(function() kick("Shoot") end)
 lobButton.Activated:Connect(function() kick("Lob") end)
@@ -273,6 +285,18 @@ UserInputService.InputBegan:Connect(function(input, processed)
         actionRemote:FireServer("SkillMove", "Feint")
     elseif input.KeyCode == Enum.KeyCode.X then
         actionRemote:FireServer("SkillMove", "StepOver")
+    elseif input.KeyCode == Enum.KeyCode.V then
+        actionRemote:FireServer("SkillMove", "KnockOn")
+    elseif input.KeyCode == Enum.KeyCode.B then
+        actionRemote:FireServer("SkillMove", "DragBack")
+    elseif input.KeyCode == Enum.KeyCode.G then
+        actionRemote:FireServer("SkillMove", "QuickTurn")
+    elseif input.KeyCode == Enum.KeyCode.H then
+        actionRemote:FireServer("SkillMove", "Shield")
+    elseif input.KeyCode == Enum.KeyCode.ButtonY then
+        actionRemote:FireServer("SkillMove", "KnockOn")
+    elseif input.KeyCode == Enum.KeyCode.ButtonB then
+        actionRemote:FireServer("SkillMove", "QuickTurn")
     end
 end)
 
