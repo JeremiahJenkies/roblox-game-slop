@@ -7,6 +7,10 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 - Server-owned football with black panel detailing, validated Pass/Shoot/Lob/Clearance actions, range/cooldown checks, speed cap, fixed 60 Hz custom-force stepping, air drag, rolling resistance, spin decay, grounded sleep, spherecast anti-tunnelling assistance, stuck/out-of-bounds recovery, moving-player dribble nudges and mathematical goal-plane detection.
 - Match lifecycle: intermission, kick-off, two halves, half-time, full-time, score updates, team-side switching and automatic rematches; configurable throw-in, corner and goal-kick restarts.
 - Server-authoritative sprint and stamina drain/regeneration; clients send intent rather than setting their own movement speed.
+- Signature 1.35x bobble heads with movement-reactive wobble on every player.
+- Server-controlled soft dribble possession that guides the ball ahead of a nearby moving player without anchoring or welding it.
+- A mouse/touch kick-power slider (20–100%) shared by shots, passes and lobs; power is revalidated on the server.
+- Goal scoring adapts to the teams switching ends at half-time and rejects stoppage-time crossings without leaving the goal lock stuck.
 - Cosmetic locker with earnable kits, ball trails and goal effects. Purchases/equipping are validated by the server and never affect competitive stats.
 - Practice scoreboard and profile HUD; keyboard controls Q=Pass, E=Shoot, F=Lob, Shift=toggle sprint, plus large touch-screen Pass/Shoot/Lob/Sprint buttons. Standard Roblox movement controls remain enabled.
 - Red/Blue teams, balanced assignment, side-based respawns and simple team-coloured player appearance.
@@ -45,5 +49,5 @@ Current build: competitive soccer foundation with a generated stadium, server-ow
 
 ## Test status
 - Repository paths and Rojo mapping have been checked against the project configuration.
-- The new service code has not been executed inside Roblox Studio from this environment. Run a 2-player Studio test for goals, repeated goals, side switching, out-of-bounds restarts, full-time rewards, sprint stamina and cosmetics before publishing.
+- The new service code has not been executed inside Roblox Studio from this environment. Run a 2-player Studio test for goals in both halves, repeated goals, out-of-bounds restarts, dribble possession changes, kick power at 20% and 100%, bobble-head appearance on R6/R15, full-time rewards, sprint stamina and cosmetics before publishing.
 - This is not yet the complete 12-part mega-prompt: matchmaking/reserved servers, bot and goalkeeper AI, replays, full animation/audio, ranked seasons, receipt-safe Robux products and performance profiling still need implementation and Studio QA.
