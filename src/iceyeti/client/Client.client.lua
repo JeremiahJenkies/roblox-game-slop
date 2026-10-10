@@ -114,7 +114,7 @@ end)
 local stats = Instance.new("Frame")
 stats.Name = "PlayerStats"
 stats.Position = UDim2.new(0, 18, 0, 120)
-stats.Size = UDim2.fromOffset(190, 88)
+stats.Size = UDim2.fromOffset(210, 132)
 stats.BackgroundColor3 = Color3.fromRGB(20, 24, 36)
 stats.BackgroundTransparency = 0.1
 stats.Parent = gui
@@ -122,6 +122,8 @@ rounded(stats, 13)
 local coinsLabel = makeLabel(stats, "Coins", "◈  0 COINS", UDim2.new(1, -20, 0, 24), UDim2.fromOffset(12, 10), Enum.Font.GothamBold, Color3.fromRGB(255, 195, 78), 14)
 local bestLabel = makeLabel(stats, "BestDay", "BEST DAY  0", UDim2.new(1, -20, 0, 22), UDim2.fromOffset(12, 36), Enum.Font.GothamBold, Color3.fromRGB(208, 227, 240), 12)
 local winsLabel = makeLabel(stats, "Wins", "100-DAY WINS  0", UDim2.new(1, -20, 0, 22), UDim2.fromOffset(12, 59), Enum.Font.GothamBold, Color3.fromRGB(208, 227, 240), 12)
+local resourcesLabel = makeLabel(stats, "Resources", "WOOD 0   •   STONE 0", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 82), Enum.Font.GothamBold, Color3.fromRGB(155, 221, 190), 12)
+local campFuelLabel = makeLabel(stats, "CampFuel", "CAMPFIRE 100%", UDim2.new(1, -20, 0, 20), UDim2.fromOffset(12, 105), Enum.Font.GothamBold, Color3.fromRGB(255, 164, 93), 12)
 
 local timerBack = Instance.new("Frame")
 timerBack.Name = "TimerBack"
@@ -170,10 +172,13 @@ local function updateStats()
 	coinsLabel.Text = "◈  " .. tostring(player:GetAttribute("Coins") or 0) .. " COINS"
 	bestLabel.Text = "BEST DAY  " .. tostring(player:GetAttribute("BestDay") or 0)
 	winsLabel.Text = "100-DAY WINS  " .. tostring(player:GetAttribute("Wins") or 0)
+	resourcesLabel.Text = "WOOD " .. tostring(player:GetAttribute("Wood") or 0) .. "   •   STONE " .. tostring(player:GetAttribute("Stone") or 0)
 end
 player:GetAttributeChangedSignal("Coins"):Connect(updateStats)
 player:GetAttributeChangedSignal("BestDay"):Connect(updateStats)
 player:GetAttributeChangedSignal("Wins"):Connect(updateStats)
+player:GetAttributeChangedSignal("Wood"):Connect(updateStats)
+player:GetAttributeChangedSignal("Stone"):Connect(updateStats)
 updateStats()
 
 stateEvent.OnClientEvent:Connect(function(state)
@@ -185,6 +190,9 @@ stateEvent.OnClientEvent:Connect(function(state)
 	timerFill.Size = UDim2.fromScale(math.clamp(remaining / duration, 0, 1), 1)
 	timerText.Text = (state.phase == "Yeti Hunt" and "SURVIVE THE HUNT  •  " or "NEXT HUNT IN  •  ") .. tostring(remaining) .. "s"
 	phaseLabel.TextColor3 = state.phase == "Yeti Hunt" and Color3.fromRGB(255, 118, 91) or Color3.fromRGB(130, 218, 255)
+	local fuel = math.clamp(tonumber(state.campFuel) or 0, 0, 100)
+	campFuelLabel.Text = "CAMPFIRE " .. math.floor(fuel) .. "%"
+	campFuelLabel.TextColor3 = fuel > 35 and Color3.fromRGB(255, 164, 93) or Color3.fromRGB(255, 91, 91)
 end)
 noticeEvent.OnClientEvent:Connect(showNotice)
 
