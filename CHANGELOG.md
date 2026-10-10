@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-10 — Close-control dribbling and tackles
+- Replaced loose velocity nudges with server-controlled AlignPosition possession, keeping the ball unanchored but following the ball carrier's feet.
+- Automatically gives possession to the nearest living player who reaches the ball; the ball follows in front of their facing direction while they move or pause.
+- Kicks and restarts release possession so the ball returns to normal physics.
+- Added server-validated tackle steals against a nearby opposing carrier, with distance, facing, team and cooldown checks.
+- Added C on keyboard and a TACKLE button on touch controls.
+- Roblox Studio multiplayer physics testing is still required; this change has not been run in Studio here.
+
 ## 2026-10-10 — Invisible boundary barriers and out-of-bounds restarts
 - Moved invisible side and end barriers closer to the playable field, while leaving room for server out-of-bounds detection to trigger first.
 - Preserved throw-ins on the sidelines and corner/goal-kick decisions beyond the goal lines, based on the last-touching team.
