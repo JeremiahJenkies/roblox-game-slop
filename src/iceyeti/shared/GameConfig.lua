@@ -25,5 +25,7 @@ Config.StaminaDrainPerQuarterSecond = 2.5
 Config.StaminaRegenPerQuarterSecond = 1.5
 Config.CacheCoins = 12
 Config.MedicCost = 20
+Config.SnowParticleRate = 32
+Config.TrailLanternCount = 9
 
 return Config
