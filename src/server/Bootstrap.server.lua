@@ -17,6 +17,7 @@ local servicesFolder = script.Parent:WaitForChild("Services")
 Remotes.InitServer()
 local serviceNames = {
     "DataService",
+    "CosmeticService",
     "PitchService",
     "TeamService",
     "PlayerService",
