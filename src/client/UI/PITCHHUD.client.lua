@@ -156,7 +156,21 @@ end
 
 stateEvent.OnClientEvent:Connect(function(state: any)
     if type(state) ~= "table" then return end
-    phaseLabel.Text = string.upper(tostring(state.phase or "PRACTICE"))
+    local phase = string.upper(tostring(state.phase or "INTERMISSION"))
+    local seconds = math.max(0, math.floor(tonumber(state.secondsLeft) or 0))
+    local clockText = string.format("%02d:%02d", math.floor(seconds / 60), seconds % 60)
+    local halfText = (tonumber(state.half) or 1) == 2 and "2ND HALF" or "1ST HALF"
+    if phase == "PLAYING" then
+        phaseLabel.Text = halfText .. "  •  " .. clockText
+    elseif phase == "HALF_TIME" or phase == "FULL_TIME" then
+        phaseLabel.Text = phase:gsub("_", " ") .. "  •  " .. clockText
+    elseif phase == "RESTART" then
+        phaseLabel.Text = string.upper(tostring(state.restartType or "RESTART"):gsub("_", " ")) .. "  •  " .. string.upper(tostring(state.restartTeam or "")) .. "  •  " .. clockText
+    elseif phase == "KICKOFF" then
+        phaseLabel.Text = "KICK-OFF  •  " .. halfText .. "  •  " .. clockText
+    else
+        phaseLabel.Text = phase:gsub("_", " ") .. "  •  " .. clockText
+    end
     redScoreLabel.Text = "RED  " .. tostring(state.redScore or 0)
     blueScoreLabel.Text = tostring(state.blueScore or 0) .. "  BLUE"
 end)
