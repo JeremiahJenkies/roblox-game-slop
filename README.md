@@ -22,6 +22,8 @@ A multiplayer Roblox survival horror prototype built with Luau and Rojo. The cur
 ## Project structure
 - `src/iceyeti/shared/GameConfig.lua` — shared game tuning.
 - `src/iceyeti/server/GameServer.server.lua` — world, server-authoritative rounds, AI, rewards, persistence.
+- `src/iceyeti/shared/EnemyConfig.lua` — default enemy stats and Common/Elite/Ancient definitions.
+- `src/iceyeti/server/EnemySpawner.lua` — server-only, attribute-driven template spawning.
 - `src/iceyeti/client/Client.client.lua` — HUD and notices.
 - `default.project.json` — Rojo mapping.
 
@@ -35,6 +37,50 @@ The previous prototype's scripts are left in the repository for reference, but t
 5. Wait for sync, then press **Play**.
 6. Use **Test → Start** with 2 players to check multiplayer.
 7. For persistence tests, publish a separate test experience and enable **Game Settings → Security → Enable Studio Access to API Services**. Avoid testing against production player data.
+
+## Attribute-driven enemy templates
+
+The original generated Ice Yeti wave remains the default. To use configurable rig templates, add at least one spawn point to `Workspace/EnemySpawnPoints`; once configured, the server uses these points for the day’s spawn pass.
+
+1. In `ReplicatedStorage`, create a Folder named `EnemyTemplates`.
+2. Put rig Models directly inside it, named to match their `EnemyType` value (for example `Common`, `Elite`, or `Ancient`). R6 and R15 rigs are supported when they contain a `Humanoid` and a `HumanoidRootPart`. Set the rig's PrimaryPart to its root if it is not set automatically.
+3. In `Workspace`, create a Folder named `EnemySpawnPoints`.
+4. Add Parts or Models directly inside that folder. Select each spawn point, open **Properties → Attributes → Add Attribute**, and add:
+   - `EnemyType` (String): `Common`, `Elite`, or `Ancient`, matching a Model name in `EnemyTemplates`.
+   - `SpawnCount` (Number): number of copies for that point, clamped to 1–100.
+   - `SpawnEnabled` (Boolean): whether the point is active.
+   - `MinDay` (Number): first day it can spawn.
+   - `MaxDay` (Number): last day it can spawn.
+5. Optionally add these Attributes to each template Model: `Level`, `Damage`, `MaxHealth`, and `MoveSpeed`. The spawner applies resolved values to the cloned Model and its Humanoid.
+
+### Example enemy definitions
+
+| Template name | Level | Damage | MaxHealth | MoveSpeed |
+|---|---:|---:|---:|---:|
+| `Common` | 1 | 10 | 100 | 12 |
+| `Elite` | 5 | 20 | 250 | 14 |
+| `Ancient` | 10 | 35 | 600 | 16 |
+
+### Attribute precedence and validation
+
+- For enemy stats: **template Model Attribute → named type definition in `EnemyConfig.lua` → default value**.
+- For spawn-point settings: **spawn-point Attribute → default in `EnemyConfig.lua`**.
+- Missing attributes use defaults. Invalid numeric values fall back to defaults and are clamped to safe ranges.
+- A missing or invalid rig template is skipped with a warning; it does not stop the rest of the server script.
+- Spawn passes are guarded per day to prevent duplicate waves. The guard is reset during the next camp phase.
+- Enemy spawning and stat assignment are server-side; no client RemoteEvent can request arbitrary spawns or change enemy attributes.
+- The spawner validates and places the rig, but does not yet attach the existing custom Yeti chase/attack AI to arbitrary R6/R15 templates. If you switch to template spawn points, test this in Studio and add an AI adapter before treating those rigs as fully equivalent to the original generated Yetis.
+
+### Studio test checklist
+
+- [ ] A valid R6 rig spawns at a configured Part spawn point.
+- [ ] A valid R15 rig spawns at a configured Model spawn point.
+- [ ] `SpawnCount` creates the expected number of clones.
+- [ ] `MinDay` and `MaxDay` include/exclude the expected days.
+- [ ] `SpawnEnabled = false` prevents spawning.
+- [ ] A missing template logs a warning and does not crash the round loop.
+- [ ] Repeated calls during one day do not create duplicate waves.
+- [ ] Verify that existing profiles, coins, resources, best day, wins, and DataStore key `IceYetiSurvival_v1` remain unchanged.
 
 ## Notes
 - This is a playable starter prototype, not a fully balanced campaign yet.
