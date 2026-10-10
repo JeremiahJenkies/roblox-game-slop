@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DataStoreService = game:GetService("DataStoreService")
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
+local UserInputService = game:GetService("UserInputService")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 
@@ -30,7 +31,13 @@ noticeEvent.Parent = remotes
 local flareEvent = remotes:FindFirstChild("ThrowFlare") or Instance.new("RemoteEvent")
 flareEvent.Name = "ThrowFlare"
 flareEvent.Parent = remotes
+local sprintEvent = remotes:FindFirstChild("Sprint") or Instance.new("RemoteEvent")
+sprintEvent.Name = "Sprint"
+sprintEvent.Parent = remotes
 local lastFlareAt = {}
+local sprinting = {}
+local staminaByPlayer = {}
+local cacheClaims = {}
 
 local currentDay = 0
 local phase = "Preparing"
@@ -233,6 +240,82 @@ local function buildWorld()
 		end
 	end
 
+	-- Supply caches reward exploration. Each player can claim each cache once per day.
+	for i = 1, 8 do
+		local x = (i % 2 == 0) and rng:NextInteger(38, 110) or rng:NextInteger(-110, -38)
+		local z = rng:NextInteger(-105, 25)
+		local crate = makePart(mapFolder, "SupplyCache" .. i, Vector3.new(4, 3, 4), CFrame.new(x, 1.7, z), Color3.fromRGB(106, 72, 43), Enum.Material.WoodPlanks)
+		local lid = makePart(mapFolder, "CacheLid" .. i, Vector3.new(4.2, 0.6, 4.2), CFrame.new(x, 3.45, z), Color3.fromRGB(148, 105, 59), Enum.Material.WoodPlanks)
+		local glow = makePart(mapFolder, "CacheBeacon" .. i, Vector3.new(0.35, 0.35, 0.35), CFrame.new(x, 4.1, z), Color3.fromRGB(255, 191, 82), Enum.Material.Neon)
+		glow.Shape = Enum.PartType.Ball
+		glow.CanCollide = false
+		local light = Instance.new("PointLight")
+		light.Color = glow.Color
+		light.Brightness = 0.65
+		light.Range = 8
+		light.Parent = glow
+		local prompt = Instance.new("ProximityPrompt")
+		prompt.Name = "SearchSupplyCache"
+		prompt.ActionText = "Search Cache"
+		prompt.ObjectText = "Abandoned Supplies"
+		prompt.HoldDuration = 0.8
+		prompt.MaxActivationDistance = 10
+		prompt.RequiresLineOfSight = false
+		prompt.Parent = crate
+		prompt.Triggered:Connect(function(player)
+			local data = profiles[player]
+			if not data then return end
+			cacheClaims[i] = cacheClaims[i] or {}
+			if cacheClaims[i][player.UserId] == currentDay then
+				noticeEvent:FireClient(player, "You already searched this cache today.")
+				return
+			end
+			cacheClaims[i][player.UserId] = currentDay
+			data.wood += 2
+			data.stone += 1
+			data.coins += 12
+			player:SetAttribute("Wood", data.wood)
+			player:SetAttribute("Stone", data.stone)
+			player:SetAttribute("Coins", data.coins)
+			lid.Color = Color3.fromRGB(65, 61, 51)
+			glow.Transparency = 0.85
+			light.Enabled = false
+			noticeEvent:FireClient(player, "Supply cache found: +2 wood, +1 stone, +12 coins!")
+			task.spawn(saveProfile, player)
+		end)
+	end
+
+	-- A costly camp medic gives players a recovery option between hunts.
+	local medic = makePart(mapFolder, "MedicStation", Vector3.new(4, 4, 4), CFrame.new(-13, 2.5, 65), Color3.fromRGB(58, 92, 72), Enum.Material.WoodPlanks)
+	local medicCross = makePart(mapFolder, "MedicCross", Vector3.new(0.6, 2.2, 0.35), CFrame.new(-13, 3, 62.8), Color3.fromRGB(255, 226, 203), Enum.Material.Neon)
+	medicCross.CanCollide = false
+	local medicPrompt = Instance.new("ProximityPrompt")
+	medicPrompt.ActionText = "Recover (20 Coins)"
+	medicPrompt.ObjectText = "Camp Medic"
+	medicPrompt.HoldDuration = 0.5
+	medicPrompt.MaxActivationDistance = 10
+	medicPrompt.RequiresLineOfSight = false
+	medicPrompt.Parent = medic
+	medicPrompt.Triggered:Connect(function(player)
+		local data = profiles[player]
+		local character = player.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if not data or not humanoid or humanoid.Health <= 0 then return end
+		if humanoid.Health >= humanoid.MaxHealth then
+			noticeEvent:FireClient(player, "You're already at full health.")
+			return
+		end
+		if data.coins < 20 then
+			noticeEvent:FireClient(player, "You need 20 coins to recover.")
+			return
+		end
+		data.coins -= 20
+		humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + 45)
+		player:SetAttribute("Coins", data.coins)
+		noticeEvent:FireClient(player, "The camp medic restored up to 45 health.")
+		task.spawn(saveProfile, player)
+	end)
+
 	local bench = makePart(mapFolder, "CraftingBench", Vector3.new(5, 2, 3), CFrame.new(13, 1.5, 65), Color3.fromRGB(92, 57, 42), Enum.Material.WoodPlanks)
 	local benchPrompt = Instance.new("ProximityPrompt")
 	benchPrompt.ActionText = "Build Shelter (15 Wood, 8 Stone)"
@@ -293,7 +376,9 @@ saveProfile = function(player)
 	if not data or not store then return end
 	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone}
 	local ok, err = pcall(function()
-		store:SetAsync("player_" .. player.UserId, payload)
+		store:UpdateAsync("player_" .. player.UserId, function()
+			return payload
+		end)
 	end)
 	if not ok then warn("[IceYeti] Save failed for " .. player.Name .. ": " .. tostring(err)) end
 end
@@ -506,9 +591,55 @@ end)
 
 Players.PlayerRemoving:Connect(function(player)
 	lastFlareAt[player] = nil
+	sprinting[player] = nil
+	staminaByPlayer[player] = nil
+end)
+
+sprintEvent.OnServerEvent:Connect(function(player, enabled)
+	if typeof(enabled) ~= "boolean" then return end
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then
+		sprinting[player] = false
+		return
+	end
+	if enabled and (staminaByPlayer[player] or 100) > 5 then
+		sprinting[player] = true
+	else
+		sprinting[player] = false
+		humanoid.WalkSpeed = 16
+	end
+end)
+
+-- Server-owned stamina prevents clients from granting themselves unlimited sprint.
+task.spawn(function()
+	while true do
+		task.wait(0.25)
+		for _, player in ipairs(Players:GetPlayers()) do
+			local character = player.Character
+			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+			local stamina = staminaByPlayer[player]
+			if stamina == nil then stamina = 100 end
+			if humanoid and humanoid.Health > 0 then
+				if sprinting[player] and stamina > 0 then
+					stamina = math.max(0, stamina - 2.5)
+					humanoid.WalkSpeed = 23
+					if stamina <= 0 then sprinting[player] = false; humanoid.WalkSpeed = 16 end
+				else
+					stamina = math.min(100, stamina + 1.5)
+					humanoid.WalkSpeed = 16
+				end
+				staminaByPlayer[player] = stamina
+				player:SetAttribute("Stamina", math.floor(stamina))
+			end
+		end
+	end
 end)
 
 local function onCharacter(player, character)
+	sprinting[player] = false
+	staminaByPlayer[player] = 100
+	player:SetAttribute("Stamina", 100)
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	local root = character:WaitForChild("HumanoidRootPart", 10)
 	if not humanoid or not root then return end
@@ -578,6 +709,7 @@ task.spawn(function()
 		end
 
 		currentDay += 1
+		cacheClaims = {}
 		if currentDay > Config.TargetDays then
 			currentDay = Config.TargetDays
 			phase = "Victory"
@@ -592,6 +724,7 @@ task.spawn(function()
 			notifyAll("YOU SURVIVED ALL 100 DAYS! The Frost is broken!")
 			task.wait(30)
 			currentDay = 0
+			cacheClaims = {}
 		end
 
 		phase = "Yeti Hunt"
