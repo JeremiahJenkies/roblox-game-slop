@@ -23,6 +23,8 @@ gui.DisplayOrder = 50
 gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = playerGui
 
+local status -- declared before navigation callbacks
+
 local function corner(obj, px)
   local u = Instance.new("UICorner"); u.CornerRadius = UDim.new(0, px); u.Parent = obj
 end
@@ -85,8 +87,20 @@ for i, n in ipairs(navNames) do
   b.Activated:Connect(function()
     if n[2] == "PLAY" then
       gui.Enabled = false
+    elseif n[2] == "SHOP" or n[2] == "INVENTORY" or n[2] == "KITS" then
+      local hub = playerGui:FindFirstChild("StarterHubUI")
+      local hubPanel = hub and hub:FindFirstChild("HubPanel")
+      if hubPanel then
+        hubPanel.Visible = true
+        local openHub = hub:FindFirstChild("OpenStarterHub")
+        if openHub then openHub.Visible = false end
+        status.Text = n[2] .. " opened."
+      else
+        status.Text = "The " .. n[2] .. " hub isn't available yet."
+      end
+      status.TextColor3 = C.orange2
     else
-      status.Text = n[2] .. " section selected — full feature integration can be added here."
+      status.Text = n[2] .. " isn't connected yet."
       status.TextColor3 = C.orange2
     end
   end)
@@ -107,11 +121,22 @@ local play = button(left, "PLAY", UDim2.fromScale(0,0), UDim2.fromScale(1,.22), 
 local ranked = button(left, "RANKED", UDim2.fromScale(0,.25), UDim2.fromScale(1,.19), C.purple, "♛")
 local custom = button(left, "CUSTOM MATCH", UDim2.fromScale(0,.47), UDim2.fromScale(1,.19), C.red, "👥"); custom.TextSize=17
 local practice = button(left, "PRACTICE", UDim2.fromScale(0,.69), UDim2.fromScale(1,.19), C.green, "◎"); practice.TextColor3=C.black
-local status = text(left, "Choose your mode and enter the haunted pitch!", UDim2.fromScale(1,.09), UDim2.fromScale(0,.9), 11, C.white, Enum.Font.GothamBold, Enum.TextXAlignment.Center)
-play.Activated:Connect(function() gui.Enabled=false end)
-ranked.Activated:Connect(function() status.Text="RANKED selected — matchmaking is not connected to this menu yet."; status.TextColor3=C.purple end)
-custom.Activated:Connect(function() status.Text="CUSTOM MATCH selected — lobby creation is not connected yet."; status.TextColor3=C.red end)
-practice.Activated:Connect(function() status.Text="PRACTICE selected — use the existing practice controls in-game."; status.TextColor3=C.green end)
+status = text(left, "Choose your mode and enter the haunted pitch!", UDim2.fromScale(1,.09), UDim2.fromScale(0,.9), 11, C.white, Enum.Font.GothamBold, Enum.TextXAlignment.Center)
+local function enterGame(message)
+  status.Text = message
+  status.TextColor3 = C.green
+  gui.Enabled = false
+end
+play.Activated:Connect(function() enterGame("Menu hidden — you're on the pitch.") end)
+practice.Activated:Connect(function() enterGame("Practice selected — move around and use the ball controls.") end)
+ranked.Activated:Connect(function()
+  status.Text = "RANKED matchmaking is not implemented yet."
+  status.TextColor3 = C.purple
+end)
+custom.Activated:Connect(function()
+  status.Text = "Custom lobby creation is not implemented yet."
+  status.TextColor3 = C.red
+end)
 
 local map = panel(backdrop, "FeaturedMap", UDim2.fromScale(.70,.14), UDim2.fromScale(.275,.22), C.panel, C.orange)
 text(map, "🏰  🎃  🦇", UDim2.fromScale(1,.49), UDim2.new(0,0,0,.03), 34, C.orange2, Enum.Font.FredokaOne, Enum.TextXAlignment.Center)
@@ -134,6 +159,23 @@ for i,item in ipairs(cosmetics) do
   local card = panel(bottom, item[2], UDim2.new((i-1)*.2,.005,0,.08), UDim2.new(w,-.005,.84,0), Color3.fromRGB(28,19,41), item[3])
   text(card, item[1], UDim2.fromScale(1,.6), UDim2.new(0,0,0,.02), 28, item[3], Enum.Font.FredokaOne, Enum.TextXAlignment.Center)
   text(card, item[2], UDim2.fromScale(1,.25), UDim2.fromScale(0,.65), 13, C.white, Enum.Font.FredokaOne, Enum.TextXAlignment.Center)
+  local hit = Instance.new("TextButton")
+  hit.Name = "Open" .. item[2]:gsub("%W","")
+  hit.BackgroundTransparency = 1
+  hit.Text = ""
+  hit.Size = UDim2.fromScale(1,1)
+  hit.Parent = card
+  hit.Activated:Connect(function()
+    local hub = playerGui:FindFirstChild("StarterHubUI")
+    local hubPanel = hub and hub:FindFirstChild("HubPanel")
+    if hubPanel then
+      hubPanel.Visible = true
+      status.Text = item[2] .. " opened in Starter Hub."
+    else
+      status.Text = item[2] .. " selected — its collection panel isn't available yet."
+    end
+    status.TextColor3 = item[3]
+  end)
 end
 
 local reopen = button(backdrop, "MENU", UDim2.new(0,14,1,-45), UDim2.fromOffset(95,32), C.purple, "🎃")
