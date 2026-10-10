@@ -28,6 +28,7 @@ local radius = BallConfig.Radius
 local physicsAccumulator = 0
 local slowGroundSince: number? = nil
 local releasePossession: () -> ()
+local recordTouch: (Player) -> ()
 local physicsRayParams = RaycastParams.new()
 physicsRayParams.FilterType = Enum.RaycastFilterType.Exclude
 physicsRayParams.IgnoreWater = true
@@ -249,7 +250,7 @@ local function attemptTackle(player: Player)
     notifyAll(player.DisplayName .. " won the tackle!")
 end
 
-local function recordTouch(player: Player)
+recordTouch = function(player: Player)
     local currentBall = ball
     if not currentBall then return end
     local lastId = currentBall:GetAttribute("LastTouchedByUserId")
