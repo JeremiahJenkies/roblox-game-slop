@@ -79,6 +79,10 @@ local shootButton = addButton("ShootButton", "SHOOT", isTouch and "POWER" or "[E
 local lobButton = addButton("LobButton", "LOB", isTouch and "HIGH" or "[F]", UDim2.new(1, -right, 1, -(bottom + actionHeight + actionGap)), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(96, 83, 160))
 local passButton = addButton("PassButton", "PASS", isTouch and "TEAMMATE" or "[Q]", UDim2.new(1, -right, 1, -(bottom + (actionHeight + actionGap) * 2)), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(43, 105, 159))
 local tackleButton = addButton("TackleButton", "TACKLE", isTouch and "STEAL BALL" or "[C]", UDim2.new(1, -right, 1, -(bottom + (actionHeight + actionGap) * 3)), UDim2.fromOffset(actionWidth, actionHeight), Color3.fromRGB(185, 63, 55))
+local feintButton = addButton("FeintButton", "FEINT", isTouch and "SIDE TOUCH" or "[Z]", UDim2.new(0, 18, 1, -(isTouch and 286 or 132)), UDim2.fromOffset(isTouch and 112 or 94, isTouch and 54 or 44), Color3.fromRGB(143, 69, 211))
+feintButton.AnchorPoint = Vector2.new(0, 1)
+local stepOverButton = addButton("StepOverButton", "STEP OVER", isTouch and "SKILL MOVE" or "[X]", UDim2.new(0, isTouch and 138 or 120, 1, -(isTouch and 286 or 132)), UDim2.fromOffset(isTouch and 118 or 104, isTouch and 54 or 44), Color3.fromRGB(224, 105, 38))
+stepOverButton.AnchorPoint = Vector2.new(0, 1)
 local sprintButton = addButton("SprintButton", "SPRINT", isTouch and "TAP TO TOGGLE" or "[SHIFT]", UDim2.new(0, isTouch and 158 or 18, 1, -(isTouch and 138 or 20)), UDim2.fromOffset(isTouch and 132 or 106, isTouch and 62 or 48), Color3.fromRGB(183, 116, 35))
 sprintButton.AnchorPoint = Vector2.new(0, 1)
 local staminaPanel = Instance.new("Frame")
@@ -247,6 +251,8 @@ end
 
 passButton.Activated:Connect(function() kick("Pass") end)
 tackleButton.Activated:Connect(function() actionRemote:FireServer("Tackle") end)
+feintButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "Feint") end)
+stepOverButton.Activated:Connect(function() actionRemote:FireServer("SkillMove", "StepOver") end)
 shootButton.Activated:Connect(function() kick("Shoot") end)
 lobButton.Activated:Connect(function() kick("Lob") end)
 
@@ -263,6 +269,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
         kick("Lob")
     elseif input.KeyCode == Enum.KeyCode.C then
         actionRemote:FireServer("Tackle")
+    elseif input.KeyCode == Enum.KeyCode.Z then
+        actionRemote:FireServer("SkillMove", "Feint")
+    elseif input.KeyCode == Enum.KeyCode.X then
+        actionRemote:FireServer("SkillMove", "StepOver")
     end
 end)
 
@@ -313,4 +323,4 @@ Workspace:GetAttributeChangedSignal("BallReady"):Connect(function()
     lobButton.Active = ready
 end)
 
-print("[PITCH] Player controls ready: sprint, close-control dribbling, tackling, adjustable pass/shot/lob power and mobile action buttons.")
+print("[PITCH] Player controls ready: sprint, close-control dribbling, feints, step-overs, tackling, adjustable pass/shot/lob power and mobile action buttons.")
