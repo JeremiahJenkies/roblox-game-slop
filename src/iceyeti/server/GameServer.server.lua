@@ -93,18 +93,59 @@ local function buildWorld()
 	-- Remove the default Baseplate: its top face overlaps the generated ground and can shimmer (z-fighting).
 	local baseplate = Workspace:FindFirstChild("Baseplate")
 	if baseplate and baseplate:IsA("BasePart") then baseplate:Destroy() end
+	pcall(function() Lighting.Technology = Enum.Technology.Future end)
 	Lighting.GlobalShadows = true
-	Lighting.ShadowSoftness = 0.32
-	Lighting.ClockTime = 1.1
-	Lighting.Brightness = 1.35
-	Lighting.Ambient = Color3.fromRGB(74, 91, 72)
-	Lighting.OutdoorAmbient = Color3.fromRGB(38, 57, 42)
-	Lighting.FogColor = Color3.fromRGB(53, 74, 57)
-	Lighting.FogStart = 55
-	Lighting.FogEnd = 220
-	Lighting.EnvironmentDiffuseScale = 0.35
-	Lighting.EnvironmentSpecularScale = 0.25
-	Lighting.ExposureCompensation = -0.08
+	Lighting.ShadowSoftness = 0.18
+	Lighting.ClockTime = 0.25
+	Lighting.Brightness = 1.8
+	Lighting.Ambient = Color3.fromRGB(63, 76, 91)
+	Lighting.OutdoorAmbient = Color3.fromRGB(30, 42, 54)
+	Lighting.FogColor = Color3.fromRGB(45, 63, 77)
+	Lighting.FogStart = 38
+	Lighting.FogEnd = 245
+	Lighting.EnvironmentDiffuseScale = 0.45
+	Lighting.EnvironmentSpecularScale = 0.55
+	Lighting.ExposureCompensation = -0.03
+
+	-- Cinematic environment stack: cool moonlight, soft bloom and restrained colour grading.
+	local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere") or Instance.new("Atmosphere")
+	atmosphere.Name = "IceYetiAtmosphere"
+	atmosphere.Density = 0.34
+	atmosphere.Offset = 0.08
+	atmosphere.Color = Color3.fromRGB(156, 190, 211)
+	atmosphere.Decay = Color3.fromRGB(45, 63, 78)
+	atmosphere.Glare = 0.12
+	atmosphere.Haze = 2.1
+	atmosphere.Parent = Lighting
+	local bloom = Lighting:FindFirstChild("IceYetiBloom") or Instance.new("BloomEffect")
+	bloom.Name = "IceYetiBloom"
+	bloom.Intensity = 0.32
+	bloom.Size = 24
+	bloom.Threshold = 1.4
+	bloom.Parent = Lighting
+	local grade = Lighting:FindFirstChild("IceYetiColorGrade") or Instance.new("ColorCorrectionEffect")
+	grade.Name = "IceYetiColorGrade"
+	grade.Brightness = -0.015
+	grade.Contrast = 0.16
+	grade.Saturation = -0.02
+	grade.TintColor = Color3.fromRGB(195, 218, 235)
+	grade.Parent = Lighting
+	local rays = Lighting:FindFirstChild("IceYetiSunRays") or Instance.new("SunRaysEffect")
+	rays.Name = "IceYetiSunRays"
+	rays.Intensity = 0.025
+	rays.Spread = 0.72
+	rays.Parent = Lighting
+
+	local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky")
+	sky.Name = "IceYetiNightSky"
+	sky.StarCount = 2200
+	sky.CelestialBodiesShown = true
+	sky.Parent = Lighting
+	local clouds = Workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+	clouds.Cover = 0.78
+	clouds.Density = 0.62
+	clouds.Color = Color3.fromRGB(111, 129, 143)
+	clouds.Parent = Workspace.Terrain
 
 	-- Ground is the only large surface. Props sit above it rather than sharing a coplanar face.
 	local ground = makePart(mapFolder, "FrozenGround", Vector3.new(300, 4, 300), CFrame.new(0, -2, 0), Color3.fromRGB(58, 88, 55), Enum.Material.Grass)
@@ -154,9 +195,37 @@ local function buildWorld()
 	end)
 	local fireLight = Instance.new("PointLight")
 	fireLight.Color = Color3.fromRGB(255, 105, 45)
-	fireLight.Brightness = 2.2
-	fireLight.Range = 24
+	fireLight.Brightness = 2.8
+	fireLight.Range = 30
+	fireLight.Shadows = true
 	fireLight.Parent = flame
+	local fireAttachment = Instance.new("Attachment")
+	fireAttachment.Position = Vector3.new(0, 0.8, 0)
+	fireAttachment.Parent = flame
+	local embers = Instance.new("ParticleEmitter")
+	embers.Name = "CampfireEmbers"
+	embers.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	embers.Color = ColorSequence.new(Color3.fromRGB(255, 104, 36), Color3.fromRGB(255, 211, 102))
+	embers.LightEmission = 0.8
+	embers.Rate = 12
+	embers.Lifetime = NumberRange.new(0.5, 1.4)
+	embers.Speed = NumberRange.new(2, 5)
+	embers.SpreadAngle = Vector2.new(18, 18)
+	embers.Acceleration = Vector3.new(0, 2, 0)
+	embers.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.18), NumberSequenceKeypoint.new(1, 0)})
+	embers.Parent = fireAttachment
+	local smoke = Instance.new("ParticleEmitter")
+	smoke.Name = "CampfireSmoke"
+	smoke.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	smoke.Color = ColorSequence.new(Color3.fromRGB(70, 78, 83), Color3.fromRGB(122, 128, 130))
+	smoke.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.55), NumberSequenceKeypoint.new(1, 1)})
+	smoke.Rate = 4
+	smoke.Lifetime = NumberRange.new(2.5, 4)
+	smoke.Speed = NumberRange.new(2, 4)
+	smoke.SpreadAngle = Vector2.new(16, 16)
+	smoke.Acceleration = Vector3.new(0, 1.5, 0)
+	smoke.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 4)})
+	smoke.Parent = fireAttachment
 	makePart(mapFolder, "CampSign", Vector3.new(14, 7, 1), CFrame.new(0, 4, 43), Color3.fromRGB(43, 34, 45), Enum.Material.WoodPlanks)
 	local signGui = Instance.new("SurfaceGui")
 	signGui.Face = Enum.NormalId.Front
@@ -359,7 +428,103 @@ local function buildWorld()
 	for i = 1, 7 do
 		local x = (i % 2 == 0) and -34 or 34
 		local z = -105 + i * 23
-		makePart(mapFolder, "IceShard", Vector3.new(5, rng:NextInteger(7, 15), 5), CFrame.new(x, 5, z) * CFrame.Angles(0, 0, math.rad(rng:NextInteger(-12, 12))), Color3.fromRGB(97, 126, 80), Enum.Material.Rock)
+		local shard = makePart(mapFolder, "IceShard", Vector3.new(5, rng:NextInteger(7, 15), 5), CFrame.new(x, 5, z) * CFrame.Angles(0, 0, math.rad(rng:NextInteger(-12, 12))), Color3.fromRGB(104, 156, 177), Enum.Material.Glass)
+		shard.Transparency = 0.22
+		shard.CastShadow = false
+	end
+
+	-- A distant watchtower gives the forest a strong silhouette and a navigation landmark.
+	local towerX, towerZ = -82, -72
+	for _, offset in ipairs({Vector3.new(-5, 8, -5), Vector3.new(5, 8, -5), Vector3.new(-5, 8, 5), Vector3.new(5, 8, 5)}) do
+		local leg = makePart(mapFolder, "WatchtowerSupport", Vector3.new(1.3, 16, 1.3), CFrame.new(towerX + offset.X, 8, towerZ + offset.Z), Color3.fromRGB(66, 49, 39), Enum.Material.Wood)
+		leg.CFrame = leg.CFrame * CFrame.Angles(math.rad(offset.X * 0.6), 0, math.rad(offset.Z * 0.6))
+	end
+	makePart(mapFolder, "WatchtowerDeck", Vector3.new(14, 1.2, 14), CFrame.new(towerX, 16, towerZ), Color3.fromRGB(82, 61, 45), Enum.Material.WoodPlanks)
+	makePart(mapFolder, "WatchtowerRoof", Vector3.new(16, 1, 16), CFrame.new(towerX, 23, towerZ), Color3.fromRGB(40, 49, 58), Enum.Material.Slate)
+	for _, rail in ipairs({
+		{Vector3.new(0, 18, -6.5), Vector3.new(14, 1, 1)},
+		{Vector3.new(0, 18, 6.5), Vector3.new(14, 1, 1)},
+		{Vector3.new(-6.5, 18, 0), Vector3.new(1, 1, 14)},
+		{Vector3.new(6.5, 18, 0), Vector3.new(1, 1, 14)}
+	}) do
+		makePart(mapFolder, "WatchtowerRail", rail[2], CFrame.new(towerX + rail[1].X, rail[1].Y, towerZ + rail[1].Z), Color3.fromRGB(67, 50, 39), Enum.Material.Wood)
+	end
+	local beacon = makePart(mapFolder, "TowerBeacon", Vector3.new(1.5, 2.2, 1.5), CFrame.new(towerX, 20.5, towerZ), Color3.fromRGB(124, 211, 255), Enum.Material.Neon)
+	beacon.Shape = Enum.PartType.Ball
+	beacon.CanCollide = false
+	local beaconLight = Instance.new("PointLight")
+	beaconLight.Color = beacon.Color
+	beaconLight.Brightness = 1.1
+	beaconLight.Range = 28
+	beaconLight.Parent = beacon
+
+	-- A ruined cabin with glowing windows makes the map feel inhabited and worth exploring.
+	local cabinX, cabinZ = 84, -64
+	makePart(mapFolder, "AbandonedCabin", Vector3.new(22, 12, 18), CFrame.new(cabinX, 6, cabinZ), Color3.fromRGB(62, 58, 53), Enum.Material.WoodPlanks)
+	makePart(mapFolder, "CabinRoof", Vector3.new(24, 1.5, 20), CFrame.new(cabinX, 12.7, cabinZ), Color3.fromRGB(42, 51, 61), Enum.Material.Slate)
+	makePart(mapFolder, "CabinDoor", Vector3.new(4, 7, 0.5), CFrame.new(cabinX, 3.8, cabinZ + 9.3), Color3.fromRGB(35, 35, 34), Enum.Material.Wood)
+	for _, wx in ipairs({cabinX - 7, cabinX + 7}) do
+		local window = makePart(mapFolder, "CabinWindow", Vector3.new(3, 3, 0.3), CFrame.new(wx, 7, cabinZ + 9.4), Color3.fromRGB(255, 175, 83), Enum.Material.Neon)
+		window.CanCollide = false
+		local windowLight = Instance.new("PointLight")
+		windowLight.Color = window.Color
+		windowLight.Brightness = 0.55
+		windowLight.Range = 10
+		windowLight.Parent = window
+	end
+	local cabinPrompt = Instance.new("ProximityPrompt")
+	cabinPrompt.ActionText = "Search Cabin"
+	cabinPrompt.ObjectText = "Abandoned Cabin"
+	cabinPrompt.HoldDuration = 1
+	cabinPrompt.MaxActivationDistance = 10
+	cabinPrompt.RequiresLineOfSight = false
+	cabinPrompt.Parent = mapFolder.CabinDoor
+	cabinPrompt.Triggered:Connect(function(player)
+		local data = profiles[player]
+		if not data then return end
+		data.coins += 25
+		data.wood += 3
+		player:SetAttribute("Coins", data.coins)
+		player:SetAttribute("Wood", data.wood)
+		cabinPrompt.Enabled = false
+		noticeEvent:FireClient(player, "Cabin searched: +25 coins and +3 wood!")
+		task.spawn(saveProfile, player)
+	end)
+
+	-- Snowfall spans a single emitter volume rather than many tiny parts, keeping the effect inexpensive.
+	local snowVolume = makePart(mapFolder, "SnowfallVolume", Vector3.new(260, 1, 260), CFrame.new(0, 54, 0), Color3.new(1, 1, 1), Enum.Material.SmoothPlastic)
+	snowVolume.Transparency = 1
+	snowVolume.CanCollide = false
+	snowVolume.CastShadow = false
+	local snowEmitter = Instance.new("ParticleEmitter")
+	snowEmitter.Name = "AmbientSnow"
+	snowEmitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	snowEmitter.Color = ColorSequence.new(Color3.fromRGB(215, 239, 255))
+	snowEmitter.LightEmission = 0.25
+	snowEmitter.Rate = 32
+	snowEmitter.Lifetime = NumberRange.new(5, 8)
+	snowEmitter.Speed = NumberRange.new(2, 5)
+	snowEmitter.SpreadAngle = Vector2.new(8, 8)
+	snowEmitter.Acceleration = Vector3.new(1.5, 0, 0.5)
+	snowEmitter.Drag = 0.5
+	snowEmitter.Size = NumberSequence.new({NumberSequenceKeypoint.new(0, 0.12), NumberSequenceKeypoint.new(1, 0.05)})
+	snowEmitter.Parent = snowVolume
+
+	-- Warm lanterns lead the eye toward camp and add depth to the trail.
+	for i = 1, 9 do
+		local z = 42 - i * 17
+		for _, side in ipairs({-1, 1}) do
+			local x = side * 12
+			local post = makePart(mapFolder, "TrailLanternPost", Vector3.new(0.6, 5, 0.6), CFrame.new(x, 2.5, z), Color3.fromRGB(56, 44, 36), Enum.Material.Wood)
+			local lantern = makePart(mapFolder, "TrailLantern", Vector3.new(1.1, 1.4, 1.1), CFrame.new(x, 5.1, z), Color3.fromRGB(255, 177, 91), Enum.Material.Neon)
+			lantern.CanCollide = false
+			local lanternLight = Instance.new("PointLight")
+			lanternLight.Color = lantern.Color
+			lanternLight.Brightness = 0.65
+			lanternLight.Range = 12
+			lanternLight.Shadows = false
+			lanternLight.Parent = lantern
+		end
 	end
 
 	yetisFolder = Instance.new("Folder")
@@ -696,9 +861,11 @@ end)
 task.spawn(function()
 	while true do
 		phase = "Camp"
-		Lighting.FogColor = Color3.fromRGB(53, 74, 57)
-		Lighting.FogEnd = 220
-		Lighting.ClockTime = 1.1
+		Lighting.FogColor = Color3.fromRGB(45, 63, 77)
+		Lighting.FogEnd = 245
+		Lighting.ClockTime = 0.25
+		local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere")
+		if atmosphere then atmosphere.Color = Color3.fromRGB(156, 190, 211); atmosphere.Decay = Color3.fromRGB(45, 63, 78) end
 		secondsLeft = Config.IntermissionSeconds
 		if yetisFolder then yetisFolder:ClearAllChildren() end
 		notifyAll("The camp is safe... for now.")
@@ -733,10 +900,14 @@ task.spawn(function()
 			Lighting.FogColor = Color3.fromRGB(104, 38, 45)
 			Lighting.FogEnd = 150
 			Lighting.ClockTime = 0
+			local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere")
+			if atmosphere then atmosphere.Color = Color3.fromRGB(192, 116, 137); atmosphere.Decay = Color3.fromRGB(83, 34, 48) end
 			notifyAll("BLOOD MOON — the Yetis are stronger and the forest turns crimson!")
 		else
-			Lighting.FogColor = Color3.fromRGB(53, 74, 57)
-			Lighting.FogEnd = 220
+			Lighting.FogColor = Color3.fromRGB(45, 63, 77)
+			Lighting.FogEnd = 245
+			local atmosphere = Lighting:FindFirstChild("IceYetiAtmosphere")
+			if atmosphere then atmosphere.Color = Color3.fromRGB(156, 190, 211); atmosphere.Decay = Color3.fromRGB(45, 63, 78) end
 			notifyAll("DAY " .. currentDay .. " — THE ICE YETIS ARE HUNTING!")
 		end
 		local spawnCount = math.clamp(1 + math.floor((currentDay - 1) / 5) + (currentDay % 5 == 0 and 1 or 0), 1, 12)
