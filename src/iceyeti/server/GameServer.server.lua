@@ -6,7 +6,18 @@ local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
-local store = DataStoreService:GetDataStore(Config.DataStoreName)
+
+-- DataStores are unavailable in unpublished places or when Studio API access is disabled.
+-- Never let that stop the remotes and core game from starting.
+local store
+local storeOk, storeResult = pcall(function()
+	return DataStoreService:GetDataStore(Config.DataStoreName)
+end)
+if storeOk then
+	store = storeResult
+else
+	warn("[IceYeti] DataStore unavailable; playing with session-only data. Publish the experience and enable Studio Access to API Services to persist progress. Details: " .. tostring(storeResult))
+end
 local remotes = ReplicatedStorage:FindFirstChild("IceYetiRemotes") or Instance.new("Folder")
 remotes.Name = "IceYetiRemotes"
 remotes.Parent = ReplicatedStorage
@@ -152,7 +163,7 @@ end
 
 local function saveProfile(player)
 	local data = profiles[player]
-	if not data then return end
+	if not data or not store then return end
 	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins}
 	local ok, err = pcall(function()
 		store:SetAsync("player_" .. player.UserId, payload)
@@ -162,14 +173,17 @@ end
 
 local function loadProfile(player)
 	local data = defaultProfile()
-	local ok, saved = pcall(function()
-		return store:GetAsync("player_" .. player.UserId)
-	end)
+	local ok, saved = false, nil
+	if store then
+		ok, saved = pcall(function()
+			return store:GetAsync("player_" .. player.UserId)
+		end)
+	end
 	if ok and type(saved) == "table" then
 		data.coins = math.max(0, tonumber(saved.coins) or 0)
 		data.bestDay = math.clamp(tonumber(saved.bestDay) or 0, 0, Config.TargetDays)
 		data.wins = math.max(0, tonumber(saved.wins) or 0)
-	elseif not ok then
+	elseif store and not ok then
 		warn("[IceYeti] Data load failed for " .. player.Name .. ": " .. tostring(saved))
 	end
 	profiles[player] = data
