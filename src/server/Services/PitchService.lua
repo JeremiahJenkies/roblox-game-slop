@@ -2,6 +2,7 @@
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
 local PitchConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("PitchConfig"))
+local BallConfig = require(game:GetService("ReplicatedStorage"):WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("BallConfig"))
 
 local PitchService = {}
 local stadium: Folder? = nil
@@ -204,8 +205,8 @@ function PitchService.Build()
     -- Keep a gap after the restart threshold so BallService can award throw-ins, corners and goal kicks first.
     local wallColor = Color3.fromRGB(30, 39, 48)
     local wallHeight, wallThickness = PitchConfig.BoundaryHeight, PitchConfig.BoundaryThickness
-    local sideDetectionLimit = halfWidth + radius + 0.5
-    local endDetectionLimit = halfLength + PitchConfig.GoalDepth + radius + 2
+    local sideDetectionLimit = halfWidth + BallConfig.Radius + 0.5
+    local endDetectionLimit = halfLength + PitchConfig.GoalDepth + BallConfig.Radius + 2
     local sideWallX = sideDetectionLimit + wallThickness / 2 + 3
     local endWallZ = endDetectionLimit + wallThickness / 2 + 3
     for _, xSign in ipairs({-1, 1}) do
