@@ -29,7 +29,7 @@ A multiplayer Roblox soccer prototype built with Luau and Rojo. It generates a s
 - The game intentionally keeps the existing DataStore name `IceYetiSurvival_v1` and key format `player_<UserId>`.
 - Existing fields (`coins`, `bestDay`, `wins`, `wood`, `stone`, `xp`, `trophies`, `discoveries`, `dataVersion`) are retained when loaded and written back; new soccer stats are added.
 - Writes merge the soccer payload into the previous record with `UpdateAsync`, so unrecognised fields are not discarded.
-- `wins` is now also used for soccer match wins. Historic `bestDay`, resource counts, XP, trophies, and discoveries are retained as legacy data, even though the soccer HUD does not display them.
+- Legacy `wins`, `bestDay`, resource counts, XP, trophies, and discoveries remain intact. Soccer match wins use a separate `soccerWins` field, so old survival wins are not reinterpreted as soccer wins.
 - Test with a separate test experience first. Roblox DataStores are scoped to an experience, and this code cannot transfer records between different experiences automatically.
 
 ## Known prototype limitations
