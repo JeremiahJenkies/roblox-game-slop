@@ -29,7 +29,6 @@ return {
     FloodlightHeight = 30,
     SurfaceThickness = 1,
     SurfaceCenterY = 0,
-    GroundCenterOffset = 0,
     MowingStripeCount = 10,
     MowingStripeThickness = 0.025,
     MowingStripeSurfaceY = 0.514,
