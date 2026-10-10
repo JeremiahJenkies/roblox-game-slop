@@ -21,7 +21,7 @@ local function makePart(parent: Instance, name: string, size: Vector3, cframe: C
 end
 
 local function flatLine(parent: Instance, name: string, size: Vector3, x: number, z: number, color: Color3)
-    local line = makePart(parent, name, Vector3.new(size.X, PitchConfig.LineHeight, size.Z), CFrame.new(x, 0.53, z), color, Enum.Material.SmoothPlastic)
+    local line = makePart(parent, name, Vector3.new(size.X, PitchConfig.LineHeight, size.Z), CFrame.new(x, PitchConfig.MarkingCenterY, z), color, Enum.Material.SmoothPlastic)
     line.CanCollide = false
     line.CastShadow = false
     return line
@@ -42,7 +42,7 @@ local function arc(parent: Instance, name: string, cx: number, cz: number, radiu
     local last: Vector3? = nil
     for index = 0, steps do
         local angle = math.rad(startAngle + (endAngle - startAngle) * (index / steps))
-        local current = Vector3.new(cx + math.cos(angle) * radius, 0.56, cz + math.sin(angle) * radius)
+        local current = Vector3.new(cx + math.cos(angle) * radius, PitchConfig.CircleMarkingCenterY, cz + math.sin(angle) * radius)
         if last then segment(parent, name .. "_" .. tostring(index), last, current, color) end
         last = current
     end
@@ -67,20 +67,21 @@ local function buildGoal(parent: Instance, teamName: string, sign: number, halfL
     local halfGoal = PitchConfig.GoalWidth / 2
     local z = sign * halfLength
     local postSize = PitchConfig.GoalPostThickness
+    local pitchTop = PitchConfig.SurfaceCenterY + PitchConfig.SurfaceThickness / 2
     local postColor = Color3.fromRGB(242, 245, 241)
     for _, x in ipairs({-halfGoal, halfGoal}) do
-        makePart(goal, "GoalPost", Vector3.new(postSize, PitchConfig.GoalHeight, postSize), CFrame.new(x, PitchConfig.GoalHeight / 2 + 0.5, z), postColor, Enum.Material.Metal)
+        makePart(goal, "GoalPost", Vector3.new(postSize, PitchConfig.GoalHeight, postSize), CFrame.new(x, pitchTop + PitchConfig.GoalHeight / 2, z), postColor, Enum.Material.Metal)
     end
-    makePart(goal, "Crossbar", Vector3.new(PitchConfig.GoalWidth + postSize, postSize, postSize), CFrame.new(0, PitchConfig.GoalHeight + 0.5, z), postColor, Enum.Material.Metal)
+    makePart(goal, "Crossbar", Vector3.new(PitchConfig.GoalWidth + postSize, postSize, postSize), CFrame.new(0, pitchTop + PitchConfig.GoalHeight, z), postColor, Enum.Material.Metal)
     local backZ = z + sign * PitchConfig.GoalDepth
     for _, x in ipairs({-halfGoal, halfGoal}) do
-        local sideNet = makePart(goal, "GoalNetSide", Vector3.new(0.18, PitchConfig.GoalHeight, PitchConfig.GoalDepth), CFrame.new(x, PitchConfig.GoalHeight / 2 + 0.5, z + sign * PitchConfig.GoalDepth / 2), Color3.fromRGB(202, 215, 219), Enum.Material.Fabric, 0.72)
+        local sideNet = makePart(goal, "GoalNetSide", Vector3.new(0.18, PitchConfig.GoalHeight, PitchConfig.GoalDepth), CFrame.new(x, pitchTop + PitchConfig.GoalHeight / 2, z + sign * PitchConfig.GoalDepth / 2), Color3.fromRGB(202, 215, 219), Enum.Material.Fabric, PitchConfig.GoalNetTransparency)
         sideNet.CanCollide = false
     end
-    local rearNet = makePart(goal, "GoalNetBack", Vector3.new(PitchConfig.GoalWidth, PitchConfig.GoalHeight, 0.18), CFrame.new(0, PitchConfig.GoalHeight / 2 + 0.5, backZ), Color3.fromRGB(202, 215, 219), Enum.Material.Fabric, 0.72)
+    local rearNet = makePart(goal, "GoalNetBack", Vector3.new(PitchConfig.GoalWidth, PitchConfig.GoalHeight, 0.18), CFrame.new(0, pitchTop + PitchConfig.GoalHeight / 2, backZ), Color3.fromRGB(202, 215, 219), Enum.Material.Fabric, PitchConfig.GoalNetTransparency)
     rearNet.CanCollide = false
     -- Goal marker is deliberately not wired to Touched; Milestone 2 will implement math-based goal-plane detection.
-    local trigger = makePart(goal, "GoalPlaneMarker", Vector3.new(PitchConfig.GoalWidth - 0.5, PitchConfig.GoalHeight - 0.5, 0.25), CFrame.new(0, PitchConfig.GoalHeight / 2 + 0.5, z + sign * 0.25), Color3.new(1, 1, 1), Enum.Material.SmoothPlastic, 1)
+    local trigger = makePart(goal, "GoalPlaneMarker", Vector3.new(PitchConfig.GoalWidth - 0.5, PitchConfig.GoalHeight - 0.5, 0.25), CFrame.new(0, pitchTop + PitchConfig.GoalHeight / 2, z + sign * 0.25), Color3.new(1, 1, 1), Enum.Material.SmoothPlastic, 1)
     trigger.CanCollide = false
     trigger.CanTouch = false
     trigger:SetAttribute("GoalPlane", true)
@@ -139,40 +140,40 @@ function PitchService.Build()
     local halfWidth, halfLength = width / 2, length / 2
     local grass = Color3.fromRGB(40, 112, 65)
     local lineColor = Color3.fromRGB(235, 240, 229)
-    local turf = makePart(stadium, "PitchSurface", Vector3.new(width, 1, length), CFrame.new(0, 0, 0), grass, Enum.Material.Grass)
+    local turf = makePart(stadium, "PitchSurface", Vector3.new(width, PitchConfig.SurfaceThickness, length), CFrame.new(0, PitchConfig.SurfaceCenterY, 0), grass, Enum.Material.Grass)
     turf:SetAttribute("GameplaySurface", true)
     turf.CastShadow = false
-    makePart(stadium, "StadiumGround", Vector3.new(width + PitchConfig.GroundMargin * 2, PitchConfig.GroundThickness, length + PitchConfig.GroundMargin * 2), CFrame.new(0, -0.5 - PitchConfig.GroundThickness / 2, 0), Color3.fromRGB(49, 70, 53), Enum.Material.Grass)
+    makePart(stadium, "StadiumGround", Vector3.new(width + PitchConfig.GroundMargin * 2, PitchConfig.GroundThickness, length + PitchConfig.GroundMargin * 2), CFrame.new(0, PitchConfig.SurfaceCenterY - PitchConfig.SurfaceThickness / 2 - PitchConfig.GroundThickness / 2, 0), Color3.fromRGB(49, 70, 53), Enum.Material.Grass)
 
     -- Alternating turf bands create a visible mowing pattern without heavy textures.
-    for band = 1, 10 do
-        local bandLength = length / 10
+    for band = 1, PitchConfig.MowingStripeCount do
+        local bandLength = length / PitchConfig.MowingStripeCount
         local z = -halfLength + (band - 0.5) * bandLength
-        local bandPart = makePart(stadium, "MowingStripe", Vector3.new(width - 1, 0.025, bandLength), CFrame.new(0, 0.514, z), band % 2 == 0 and Color3.fromRGB(44, 124, 71) or Color3.fromRGB(36, 104, 59), Enum.Material.Grass)
+        local bandPart = makePart(stadium, "MowingStripe", Vector3.new(width - 1, PitchConfig.MowingStripeThickness, bandLength), CFrame.new(0, PitchConfig.MowingStripeSurfaceY, z), band % 2 == 0 and Color3.fromRGB(44, 124, 71) or Color3.fromRGB(36, 104, 59), Enum.Material.Grass)
         bandPart.CanCollide = false; bandPart.CastShadow = false
     end
 
     -- Core field markings.
-    flatLine(stadium, "TouchlineWest", Vector3.new(0.35, 0, length), -halfWidth, 0, lineColor)
+    flatLine(stadium, "TouchlineWest", Vector3.new(PitchConfig.LineThickness, 0, length), -halfWidth, 0, lineColor)
     flatLine(stadium, "TouchlineEast", Vector3.new(0.35, 0, length), halfWidth, 0, lineColor)
-    flatLine(stadium, "GoalLineNorth", Vector3.new(width, 0, 0.35), 0, -halfLength, lineColor)
+    flatLine(stadium, "GoalLineNorth", Vector3.new(width, 0, PitchConfig.LineThickness), 0, -halfLength, lineColor)
     flatLine(stadium, "GoalLineSouth", Vector3.new(width, 0, 0.35), 0, halfLength, lineColor)
     flatLine(stadium, "HalfwayLine", Vector3.new(width, 0, 0.35), 0, 0, lineColor)
-    arc(stadium, "CentreCircle", 0, 0, PitchConfig.CentreCircleRadius, 0, 360, 48, lineColor)
-    local centreSpot = makePart(stadium, "CentreSpot", Vector3.new(PitchConfig.CentreSpotRadius * 2, 0.07, PitchConfig.CentreSpotRadius * 2), CFrame.new(0, 0.56, 0), lineColor, Enum.Material.SmoothPlastic)
+    arc(stadium, "CentreCircle", 0, 0, PitchConfig.CentreCircleRadius, 0, 360, PitchConfig.CentreCircleSegments, lineColor)
+    local centreSpot = makePart(stadium, "CentreSpot", Vector3.new(PitchConfig.CentreSpotRadius * 2, PitchConfig.SpotThickness, PitchConfig.CentreSpotRadius * 2), CFrame.new(0, PitchConfig.SpotCenterY, 0), lineColor, Enum.Material.SmoothPlastic)
     centreSpot.Shape = Enum.PartType.Ball; centreSpot.CanCollide = false
 
     local function drawBox(name: string, sign: number, boxWidth: number, depth: number)
         local edgeZ = sign * halfLength
         local innerZ = sign * (halfLength - depth)
-        flatLine(stadium, name .. "Inner", Vector3.new(boxWidth, 0, 0.3), 0, innerZ, lineColor)
-        flatLine(stadium, name .. "Left", Vector3.new(0.3, 0, depth), -boxWidth / 2, sign * (halfLength - depth / 2), lineColor)
+        flatLine(stadium, name .. "Inner", Vector3.new(boxWidth, 0, PitchConfig.LineThickness), 0, innerZ, lineColor)
+        flatLine(stadium, name .. "Left", Vector3.new(PitchConfig.LineThickness, 0, depth), -boxWidth / 2, sign * (halfLength - depth / 2), lineColor)
         flatLine(stadium, name .. "Right", Vector3.new(0.3, 0, depth), boxWidth / 2, sign * (halfLength - depth / 2), lineColor)
         local spotZ = sign * (halfLength - PitchConfig.PenaltySpotDepth)
         if name == "PenaltyArea" then
-            local spot = makePart(stadium, "PenaltySpot", Vector3.new(PitchConfig.PenaltySpotRadius * 2, 0.07, PitchConfig.PenaltySpotRadius * 2), CFrame.new(0, 0.56, spotZ), lineColor, Enum.Material.SmoothPlastic)
+            local spot = makePart(stadium, "PenaltySpot", Vector3.new(PitchConfig.PenaltySpotRadius * 2, PitchConfig.SpotThickness, PitchConfig.PenaltySpotRadius * 2), CFrame.new(0, PitchConfig.SpotCenterY, spotZ), lineColor, Enum.Material.SmoothPlastic)
             spot.Shape = Enum.PartType.Ball; spot.CanCollide = false
-            arc(stadium, "PenaltyArc", 0, spotZ, 10, sign == 1 and 205 or 25, sign == 1 and 335 or 155, 22, lineColor)
+            arc(stadium, "PenaltyArc", 0, spotZ, PitchConfig.PenaltyArcRadius, sign == 1 and 205 or 25, sign == 1 and 335 or 155, PitchConfig.PenaltyArcSegments, lineColor)
         end
         return edgeZ
     end
@@ -184,17 +185,17 @@ function PitchService.Build()
         for _, zSign in ipairs({-1, 1}) do
             local cx, cz = xSign * halfWidth, zSign * halfLength
             local startAngle = xSign == -1 and (zSign == -1 and 0 or 270) or (zSign == -1 and 90 or 180)
-            arc(stadium, "CornerArc", cx, cz, PitchConfig.CornerArcRadius, startAngle, startAngle + 90, 10, lineColor)
+            arc(stadium, "CornerArc", cx, cz, PitchConfig.CornerArcRadius, startAngle, startAngle + 90, PitchConfig.CornerArcSegments, lineColor)
         end
     end
 
     -- Goals and hidden position markers for later services.
     buildGoal(stadium, "Red", -1, halfLength)
     buildGoal(stadium, "Blue", 1, halfLength)
-    makeMarker(stadium, "TeamASpawn", Vector3.new(0, 1, -PitchConfig.SpawnInset), "Team A spawn", "Red")
-    makeMarker(stadium, "TeamBSpawn", Vector3.new(0, 1, PitchConfig.SpawnInset), "Team B spawn", "Blue")
-    makeMarker(stadium, "KickoffSpot", Vector3.new(0, 1, 0), "Kickoff")
-    makeMarker(stadium, "BallSpawn", Vector3.new(0, 2, 0), "Ball spawn")
+    makeMarker(stadium, "TeamASpawn", Vector3.new(0, PitchConfig.MarkerY, -PitchConfig.SpawnInset), "Team A spawn", "Red")
+    makeMarker(stadium, "TeamBSpawn", Vector3.new(0, PitchConfig.MarkerY, PitchConfig.SpawnInset), "Team B spawn", "Blue")
+    makeMarker(stadium, "KickoffSpot", Vector3.new(0, PitchConfig.MarkerY, 0), "Kickoff")
+    makeMarker(stadium, "BallSpawn", Vector3.new(0, PitchConfig.BallMarkerY, 0), "Ball spawn")
 
     -- Invisible safety walls sit outside the field and goal areas.
     local wallColor = Color3.fromRGB(30, 39, 48)
@@ -211,17 +212,17 @@ function PitchService.Build()
     if PitchConfig.DecorativePartsEnabled then
         for _, side in ipairs({-1, 1}) do
             local x = side * (halfWidth + PitchConfig.StandOffset)
-            makePart(stadium, "LongGrandstand", Vector3.new(18, PitchConfig.StandHeight, length + 24), CFrame.new(x, PitchConfig.StandHeight / 2, 0), Color3.fromRGB(48, 59, 72), Enum.Material.Metal)
+            makePart(stadium, "LongGrandstand", Vector3.new(PitchConfig.StandSideDepth, PitchConfig.StandHeight, length + PitchConfig.StandLengthExtension), CFrame.new(x, PitchConfig.StandHeight / 2, 0), Color3.fromRGB(48, 59, 72), Enum.Material.Metal)
             for row = 1, PitchConfig.StandRows do
-                local seats = makePart(stadium, "StandTier", Vector3.new(18, 1.1, length + 18), CFrame.new(x, row * 1.45, 0), row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139), Enum.Material.Metal)
+                local seats = makePart(stadium, "StandTier", Vector3.new(PitchConfig.StandSideDepth, PitchConfig.StandRowThickness, length + PitchConfig.StandSeatLengthExtension), CFrame.new(x, row * PitchConfig.StandRowSpacing, 0), row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139), Enum.Material.Metal)
                 seats.CastShadow = true
             end
         end
         for _, sign in ipairs({-1, 1}) do
-            local z = sign * (halfLength + 19)
-            makePart(stadium, "EndGrandstand", Vector3.new(width / 2 + 8, 9, 14), CFrame.new(0, 4, z), Color3.fromRGB(48, 59, 72), Enum.Material.Metal)
-            for row = 1, 4 do
-                makePart(stadium, "EndStandTier", Vector3.new(width / 2 + 4, 1, 14), CFrame.new(0, row * 1.55, z), row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139), Enum.Material.Metal)
+            local z = sign * (halfLength + PitchConfig.EndStandZOffset)
+            makePart(stadium, "EndGrandstand", Vector3.new(width / 2 + 8, PitchConfig.EndStandHeight, 14), CFrame.new(0, PitchConfig.EndStandHeight / 2, z), Color3.fromRGB(48, 59, 72), Enum.Material.Metal)
+            for row = 1, PitchConfig.EndStandRows do
+                makePart(stadium, "EndStandTier", Vector3.new(width / 2 + 4, 1, 14), CFrame.new(0, row * PitchConfig.EndStandRowSpacing, z), row % 2 == 0 and Color3.fromRGB(175, 54, 60) or Color3.fromRGB(63, 100, 139), Enum.Material.Metal)
             end
         end
         for _, xSign in ipairs({-1, 1}) do
@@ -229,9 +230,9 @@ function PitchService.Build()
                 local x = xSign * (halfWidth + 12)
                 local z = zSign * (halfLength + 8)
                 makePart(stadium, "FloodlightPole", Vector3.new(1.4, PitchConfig.FloodlightHeight, 1.4), CFrame.new(x, PitchConfig.FloodlightHeight / 2, z), Color3.fromRGB(55, 66, 78), Enum.Material.Metal)
-                local rig = makePart(stadium, "FloodlightRig", Vector3.new(8, 1.2, 2), CFrame.new(x, PitchConfig.FloodlightHeight, z), Color3.fromRGB(43, 52, 63), Enum.Material.Metal)
+                local rig = makePart(stadium, "FloodlightRig", Vector3.new(PitchConfig.FloodlightWidth, 1.2, PitchConfig.FloodlightDepth), CFrame.new(x, PitchConfig.FloodlightHeight, z), Color3.fromRGB(43, 52, 63), Enum.Material.Metal)
                 local light = Instance.new("PointLight")
-                light.Name = "Floodlight"; light.Color = Color3.fromRGB(227, 239, 255); light.Brightness = 2.2; light.Range = 48; light.Shadows = true; light.Parent = rig
+                light.Name = "Floodlight"; light.Color = Color3.fromRGB(227, 239, 255); light.Brightness = PitchConfig.FloodlightBrightness; light.Range = PitchConfig.FloodlightRange; light.Shadows = true; light.Parent = rig
             end
         end
     end
