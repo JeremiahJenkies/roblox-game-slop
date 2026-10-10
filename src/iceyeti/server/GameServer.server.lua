@@ -54,6 +54,7 @@ local function broadcast()
 		secondsLeft = secondsLeft,
 		alive = #Players:GetPlayers(),
 		campFuel = campFuel,
+		isBloodMoon = currentDay > 0 and currentDay % 5 == 0 and phase == "Yeti Hunt",
 	})
 end
 
@@ -287,7 +288,7 @@ local function defaultProfile()
 	return {coins = 0, bestDay = 0, wins = 0, wood = 0, stone = 0}
 end
 
-local function saveProfile(player)
+saveProfile = function(player)
 	local data = profiles[player]
 	if not data or not store then return end
 	local payload = {coins = data.coins, bestDay = data.bestDay, wins = data.wins, wood = data.wood, stone = data.stone}
@@ -383,6 +384,53 @@ local function spawnYeti(day, spawnPosition)
 	humanoid.WalkSpeed = Config.BaseYetiSpeed + math.floor((day - 1) / 10) * Config.SpeedPerTenDays
 	humanoid.DisplayName = "ICE YETI"
 	humanoid.Parent = model
+
+	-- Clear, lightweight overhead health bar so players can judge whether a Yeti is nearly defeated.
+	local healthBillboard = Instance.new("BillboardGui")
+	healthBillboard.Name = "YetiHealthBar"
+	healthBillboard.Size = UDim2.fromOffset(140, 28)
+	healthBillboard.StudsOffset = Vector3.new(0, 7.5, 0)
+	healthBillboard.AlwaysOnTop = true
+	healthBillboard.MaxDistance = 120
+	healthBillboard.Adornee = head
+	healthBillboard.Parent = model
+	local healthBack = Instance.new("Frame")
+	healthBack.Name = "Back"
+	healthBack.Size = UDim2.new(1, 0, 0, 9)
+	healthBack.Position = UDim2.fromOffset(0, 17)
+	healthBack.BackgroundColor3 = Color3.fromRGB(28, 31, 36)
+	healthBack.BorderSizePixel = 0
+	healthBack.Parent = healthBillboard
+	local healthBackCorner = Instance.new("UICorner")
+	healthBackCorner.CornerRadius = UDim.new(1, 0)
+	healthBackCorner.Parent = healthBack
+	local healthFill = Instance.new("Frame")
+	healthFill.Name = "Fill"
+	healthFill.Size = UDim2.fromScale(1, 1)
+	healthFill.BackgroundColor3 = Color3.fromRGB(111, 224, 255)
+	healthFill.BorderSizePixel = 0
+	healthFill.Parent = healthBack
+	local healthFillCorner = Instance.new("UICorner")
+	healthFillCorner.CornerRadius = UDim.new(1, 0)
+	healthFillCorner.Parent = healthFill
+	local healthName = Instance.new("TextLabel")
+	healthName.Name = "Name"
+	healthName.Size = UDim2.new(1, 0, 0, 15)
+	healthName.BackgroundTransparency = 1
+	healthName.Font = Enum.Font.GothamBlack
+	healthName.Text = "ICE YETI"
+	healthName.TextColor3 = Color3.fromRGB(225, 245, 255)
+	healthName.TextStrokeTransparency = 0.4
+	healthName.TextSize = 11
+	healthName.Parent = healthBillboard
+	local function refreshHealthBar()
+		local ratio = math.clamp(humanoid.Health / math.max(1, humanoid.MaxHealth), 0, 1)
+		healthFill.Size = UDim2.fromScale(ratio, 1)
+		healthFill.BackgroundColor3 = ratio <= 0.25 and Color3.fromRGB(255, 75, 74) or (ratio <= 0.55 and Color3.fromRGB(255, 175, 69) or Color3.fromRGB(111, 224, 255))
+		healthName.Text = "ICE YETI  •  " .. math.ceil(humanoid.Health) .. " HP"
+	end
+	humanoid.HealthChanged:Connect(refreshHealthBar)
+	refreshHealthBar()
 	model.PrimaryPart = root
 	pcall(function() root:SetNetworkOwner(nil) end)
 
@@ -423,7 +471,7 @@ local function spawnYeti(day, spawnPosition)
 						lastAttack = os.clock()
 						local targetHumanoid = target.Character and target.Character:FindFirstChildOfClass("Humanoid")
 						if targetHumanoid and targetHumanoid.Health > 0 then
-							targetHumanoid:TakeDamage(Config.BaseYetiDamage + math.floor((day - 1) / 8) * Config.DamagePerDay)
+							targetHumanoid:TakeDamage(Config.BaseYetiDamage + math.floor((day - 1) / 8) * Config.DamagePerDay + (day % 5 == 0 and 4 or 0))
 						end
 					end
 				end
@@ -504,9 +552,22 @@ local function awardSurvival(day)
 	end
 end
 
+-- Periodic saves protect progress if a player disconnects unexpectedly.
+task.spawn(function()
+	while true do
+		task.wait(60)
+		for _, player in ipairs(Players:GetPlayers()) do
+			task.spawn(saveProfile, player)
+		end
+	end
+end)
+
 task.spawn(function()
 	while true do
 		phase = "Camp"
+		Lighting.FogColor = Color3.fromRGB(53, 74, 57)
+		Lighting.FogEnd = 220
+		Lighting.ClockTime = 1.1
 		secondsLeft = Config.IntermissionSeconds
 		if yetisFolder then yetisFolder:ClearAllChildren() end
 		notifyAll("The camp is safe... for now.")
@@ -535,8 +596,17 @@ task.spawn(function()
 
 		phase = "Yeti Hunt"
 		secondsLeft = Config.DayLengthSeconds
-		notifyAll("DAY " .. currentDay .. " — THE ICE YETIS ARE HUNTING!")
-		local spawnCount = math.clamp(1 + math.floor((currentDay - 1) / 5), 1, 12)
+		if currentDay % 5 == 0 then
+			Lighting.FogColor = Color3.fromRGB(104, 38, 45)
+			Lighting.FogEnd = 150
+			Lighting.ClockTime = 0
+			notifyAll("BLOOD MOON — the Yetis are stronger and the forest turns crimson!")
+		else
+			Lighting.FogColor = Color3.fromRGB(53, 74, 57)
+			Lighting.FogEnd = 220
+			notifyAll("DAY " .. currentDay .. " — THE ICE YETIS ARE HUNTING!")
+		end
+		local spawnCount = math.clamp(1 + math.floor((currentDay - 1) / 5) + (currentDay % 5 == 0 and 1 or 0), 1, 12)
 		for i = 1, spawnCount do
 			local x = rng:NextInteger(-90, 90)
 			local z = rng:NextInteger(-105, 5)
