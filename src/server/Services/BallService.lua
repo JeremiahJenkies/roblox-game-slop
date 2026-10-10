@@ -21,7 +21,9 @@ local goalLocked = false
 local scoredThisTrip = false
 local maid = Maid.new()
 local kickRemote: RemoteEvent? = nil
+local actionRemote: RemoteEvent? = nil
 local noticeRemote: RemoteEvent? = nil
+local lastTackleAt: {[Player]: number} = {}
 local radius = BallConfig.Radius
 local physicsAccumulator = 0
 local slowGroundSince: number? = nil
@@ -95,6 +97,7 @@ end
 function BallService.ResetBall()
     local currentBall = ball
     if not currentBall or not currentBall.Parent then return end
+    releasePossession()
     currentBall.AssemblyLinearVelocity = Vector3.zero
     currentBall.AssemblyAngularVelocity = Vector3.zero
     currentBall.CFrame = CFrame.new(getKickoffPosition())
@@ -116,6 +119,7 @@ end
 function BallService.PlaceForRestart(position: Vector3)
     local currentBall = ball
     if not currentBall or not currentBall.Parent then return end
+    releasePossession()
     currentBall.AssemblyLinearVelocity = Vector3.zero
     currentBall.AssemblyAngularVelocity = Vector3.zero
     currentBall.CFrame = CFrame.new(position)
@@ -161,6 +165,87 @@ local function createBall()
     lastMovedAt = os.clock()
     Workspace:SetAttribute("BallReady", true)
     print("[BallService] Server-owned football created at kickoff.")
+end
+
+local function releasePossession()
+    local currentBall = ball
+    if not currentBall then return end
+    local align = currentBall:FindFirstChild("PITCHPossessionAlign")
+    if align then align:Destroy() end
+    local ballAttachment = currentBall:FindFirstChild("PITCHPossessionAttachment")
+    if ballAttachment then ballAttachment:Destroy() end
+    for _, candidate in ipairs(Players:GetPlayers()) do
+        local character = candidate.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        local target = root and root:FindFirstChild("PITCHBallTargetAttachment")
+        if target then target:Destroy() end
+    end
+    currentBall:SetAttribute("PossessorUserId", 0)
+end
+
+local function attachPossession(player: Player, root: BasePart)
+    local currentBall = ball
+    if not currentBall or not currentBall.Parent then return end
+    releasePossession()
+    local ballAttachment = Instance.new("Attachment")
+    ballAttachment.Name = "PITCHPossessionAttachment"
+    ballAttachment.Parent = currentBall
+    local target = Instance.new("Attachment")
+    target.Name = "PITCHBallTargetAttachment"
+    -- Keep the ball near the feet and ahead of the avatar's facing direction.
+    target.Position = Vector3.new(0, -1.25, -BallConfig.DribbleTargetOffset)
+    target.Parent = root
+    local align = Instance.new("AlignPosition")
+    align.Name = "PITCHPossessionAlign"
+    align.Mode = Enum.PositionAlignmentMode.TwoAttachment
+    align.Attachment0 = ballAttachment
+    align.Attachment1 = target
+    align.ApplyAtCenterOfMass = true
+    align.RigidityEnabled = false
+    align.Responsiveness = 35
+    align.MaxForce = 50000
+    align.MaxVelocity = 55
+    align.Parent = currentBall
+    currentBall.AssemblyAngularVelocity = Vector3.zero
+    currentBall:SetAttribute("PossessorUserId", player.UserId)
+    pcall(function() currentBall:SetNetworkOwner(nil) end)
+end
+
+local function attemptTackle(player: Player)
+    local currentBall = ball
+    if not currentBall or not currentBall.Parent then return end
+    local state = MatchService.GetState()
+    if state.phase ~= "PLAYING" and state.phase ~= "PRACTICE" then return end
+    local now = os.clock()
+    if now - (lastTackleAt[player] or 0) < 1.25 then return end
+    lastTackleAt[player] = now
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not root or not root:IsA("BasePart") or not humanoid or humanoid.Health <= 0 then return end
+
+    local possessorId = currentBall:GetAttribute("PossessorUserId")
+    local possessor = typeof(possessorId) == "number" and possessorId > 0 and Players:GetPlayerByUserId(possessorId) or nil
+    if not possessor or possessor == player then return end
+    local opponentCharacter = possessor.Character
+    local opponentRoot = opponentCharacter and opponentCharacter:FindFirstChild("HumanoidRootPart")
+    local opponentHumanoid = opponentCharacter and opponentCharacter:FindFirstChildOfClass("Humanoid")
+    if not opponentRoot or not opponentRoot:IsA("BasePart") or not opponentHumanoid or opponentHumanoid.Health <= 0 then return end
+    local offset = opponentRoot.Position - root.Position
+    if offset.Magnitude > 7 then return end
+    local forward = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
+    local toOpponent = Vector3.new(offset.X, 0, offset.Z)
+    if forward.Magnitude > 0.05 and toOpponent.Magnitude > 0.05 and forward.Unit:Dot(toOpponent.Unit) < -0.15 then return end
+
+    -- A successful close-range tackle strips possession and gives the tackler control.
+    local lastTeam = player:GetAttribute("Team") or (player.Team and player.Team.Name)
+    local opponentTeam = possessor:GetAttribute("Team") or (possessor.Team and possessor.Team.Name)
+    if lastTeam == opponentTeam then return end
+    recordTouch(player)
+    attachPossession(player, root)
+    currentBall.AssemblyLinearVelocity = Vector3.zero
+    currentBall.AssemblyAngularVelocity = Vector3.zero
+    notifyAll(player.DisplayName .. " won the tackle!")
 end
 
 local function recordTouch(player: Player)
@@ -214,7 +299,7 @@ local function doKick(player: Player, action: any, direction: any, powerValue: a
     if horizontal.Magnitude < 0.05 then return end
     local finalDirection = (horizontal.Unit + Vector3.new(0, y, 0)).Unit
     recordTouch(player)
-    currentBall:SetAttribute("PossessorUserId", 0)
+    releasePossession()
     local desiredSpeed = basePower * power
     currentBall.AssemblyLinearVelocity = finalDirection * math.max(currentBall.AssemblyLinearVelocity.Magnitude * 0.25, 0)
     currentBall:ApplyImpulse(finalDirection * desiredSpeed * currentBall.AssemblyMass)
@@ -347,14 +432,21 @@ function BallService.Init()
     Workspace:SetAttribute("BallReady", false)
     local folder = ReplicatedStorage:WaitForChild("SoccerRemotes")
     kickRemote = folder:WaitForChild("KickBall") :: RemoteEvent
+    actionRemote = folder:WaitForChild("ActionRequest") :: RemoteEvent
     noticeRemote = folder:WaitForChild("Notice") :: RemoteEvent
     stadium = Workspace:WaitForChild("SoccerStadium", 10) :: Folder?
     if not stadium then error("PitchService must create SoccerStadium before BallService.Init") end
     createBall()
     kickRemote.OnServerEvent:Connect(doKick)
+    if actionRemote then
+        actionRemote.OnServerEvent:Connect(function(player: Player, action: any)
+            if action == "Tackle" then attemptTackle(player) end
+        end)
+    end
     maid:GiveTask(Players.PlayerRemoving:Connect(function(player)
         lastKickAt[player] = nil
         lastDribbleAt[player] = nil
+        lastTackleAt[player] = nil
     end))
     maid:GiveTask(RunService.Heartbeat:Connect(function(deltaTime: number)
         local currentBall = ball
@@ -419,50 +511,47 @@ function BallService.Init()
         if os.clock() - lastMovedAt >= BallConfig.StuckBallSeconds then BallService.ResetBall() end
         previousPosition = currentBall.Position
     end))
-    -- Soft possession keeps the ball close to a moving player's feet without welding or anchoring it.
+    -- Close-control possession: the ball physically follows the nearest player who reaches it.
+    -- It remains unanchored; an AlignPosition constraint lets tackles, kicks and ball physics stay responsive.
     task.spawn(function()
         while ball and ball.Parent do
             task.wait(0.05)
             local currentBall = ball
             if not currentBall or not currentBall.Parent or goalLocked then continue end
             local matchState = MatchService.GetState()
-            if matchState.phase ~= "PLAYING" then
-                currentBall:SetAttribute("PossessorUserId", 0)
+            if matchState.phase ~= "PLAYING" and matchState.phase ~= "PRACTICE" then
+                releasePossession()
                 continue
             end
 
-            local now = os.clock()
             local possessorId = currentBall:GetAttribute("PossessorUserId")
             local possessor = typeof(possessorId) == "number" and possessorId > 0 and Players:GetPlayerByUserId(possessorId) or nil
             local chosenPlayer: Player? = nil
             local chosenRoot: BasePart? = nil
             local chosenHumanoid: Humanoid? = nil
-            local nearestDistance = BallConfig.DribbleAcquireRange
 
             if possessor then
                 local character = possessor.Character
                 local root = character and character:FindFirstChild("HumanoidRootPart")
                 local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-                if root and root:IsA("BasePart") and humanoid and humanoid.Health > 0 then
-                    local distance = (root.Position - currentBall.Position).Magnitude
-                    if distance <= BallConfig.DribbleReleaseRange then
-                        chosenPlayer = possessor
-                        chosenRoot = root
-                        chosenHumanoid = humanoid
-                    end
+                if root and root:IsA("BasePart") and humanoid and humanoid.Health > 0
+                    and (root.Position - currentBall.Position).Magnitude <= BallConfig.DribbleReleaseRange + 2 then
+                    chosenPlayer = possessor
+                    chosenRoot = root
+                    chosenHumanoid = humanoid
                 end
             end
 
             if not chosenPlayer then
-                currentBall:SetAttribute("PossessorUserId", 0)
+                releasePossession()
+                local nearestDistance = BallConfig.TouchRange
                 for _, candidate in ipairs(Players:GetPlayers()) do
                     local character = candidate.Character
                     local root = character and character:FindFirstChild("HumanoidRootPart")
                     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-                    if root and root:IsA("BasePart") and humanoid and humanoid.Health > 0
-                        and humanoid.MoveDirection.Magnitude > 0.1 then
+                    if root and root:IsA("BasePart") and humanoid and humanoid.Health > 0 then
                         local distance = (root.Position - currentBall.Position).Magnitude
-                        if distance < nearestDistance then
+                        if distance <= nearestDistance then
                             nearestDistance = distance
                             chosenPlayer = candidate
                             chosenRoot = root
@@ -470,44 +559,29 @@ function BallService.Init()
                         end
                     end
                 end
-                if chosenPlayer then
-                    if currentBall:GetAttribute("LastTouchedByUserId") ~= chosenPlayer.UserId then
-                        recordTouch(chosenPlayer)
-                    end
-                    currentBall:SetAttribute("PossessorUserId", chosenPlayer.UserId)
+                if chosenPlayer and chosenRoot then
+                    recordTouch(chosenPlayer)
+                    attachPossession(chosenPlayer, chosenRoot)
                 end
             end
 
-            if chosenPlayer and chosenRoot and chosenHumanoid and chosenHumanoid.MoveDirection.Magnitude > 0.1 then
+            if chosenPlayer and chosenRoot and chosenHumanoid then
                 local direction = Vector3.new(chosenHumanoid.MoveDirection.X, 0, chosenHumanoid.MoveDirection.Z)
-                if direction.Magnitude > 0.1 then
-                    local groundY = getPitchTop() + radius + 0.03
-                    local target = Vector3.new(chosenRoot.Position.X, groundY, chosenRoot.Position.Z)
-                        + direction.Unit * BallConfig.DribbleTargetOffset
-                    local offset = Vector3.new(target.X - currentBall.Position.X, 0, target.Z - currentBall.Position.Z)
-                    if offset.Magnitude <= BallConfig.DribbleControlRange then
-                        local desiredSpeed = math.min(18, math.max(7, chosenRoot.AssemblyLinearVelocity.Magnitude))
-                        local desiredVelocity = direction.Unit * desiredSpeed
-                        if offset.Magnitude > 0.1 then
-                            desiredVelocity += offset.Unit * math.min(BallConfig.DribbleCorrectionSpeed, offset.Magnitude * 2)
-                        end
-                        local currentVelocity = currentBall.AssemblyLinearVelocity
-                        local blend = 0.28
-                        currentBall.AssemblyLinearVelocity = Vector3.new(
-                            currentVelocity.X + (desiredVelocity.X - currentVelocity.X) * blend,
-                            currentVelocity.Y,
-                            currentVelocity.Z + (desiredVelocity.Z - currentVelocity.Z) * blend
-                        )
-                        lastDribbleAt[chosenPlayer] = now
-                        lastMovedAt = now
-                    else
-                        currentBall:SetAttribute("PossessorUserId", 0)
-                    end
+                if direction.Magnitude < 0.1 then
+                    local look = chosenRoot.CFrame.LookVector
+                    direction = Vector3.new(look.X, 0, look.Z)
+                end
+                local target = chosenRoot:FindFirstChild("PITCHBallTargetAttachment")
+                if target and target:IsA("Attachment") and direction.Magnitude > 0.1 then
+                    target.Position = Vector3.new(0, -1.25, -BallConfig.DribbleTargetOffset)
+                    target.CFrame = CFrame.new(target.Position)
+                    lastDribbleAt[chosenPlayer] = os.clock()
+                    lastMovedAt = os.clock()
                 end
             end
         end
     end)
-    print("[BallService] Validated kicks, soft player-to-ball control, adjustable power and half-aware goal detection are active.")
+    print("[BallService] Validated kicks, close-control possession, tackle steals, adjustable power and half-aware goal detection are active.")
 end
 
 return BallService
